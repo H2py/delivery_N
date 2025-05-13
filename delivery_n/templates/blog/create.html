@@ -1,15 +1,179 @@
 {% extends 'common/base.html' %}
 
+<!-- SEO 관련 헤더 태그 모음 -->
+{% block title %}배달N빵! 게시글 작성{% endblock %}
+<!-- SEO 관련 헤더 태그 모음 끝 -->
+
+<!-- 헤더 포함 -->
 {% block header %}
-  <h1>{% block title %}New Post{% endblock %}</h1>
+{% include 'common/header.html' %}
 {% endblock %}
 
 {% block content %}
-  <form method="post">
-    <label for="title">Title</label>
-    <input name="title" id="title" value="{{ request.form['title'] }}" required>
-    <label for="body">Body</label>
-    <textarea name="body" id="body">{{ request.form['body'] }}</textarea>
-    <input type="submit" value="Save">
-  </form>
+<div class="font-notokr max-w-2xl mx-auto p-6">
+    <form method="post" class="space-y-6">
+        <!-- 기본 정보 섹션 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold mb-4">기본 정보</h2>
+            <div class="space-y-4">
+                <!-- 제목 입력 -->
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">제목</label>
+                    <input type="text" id="title" name="title" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="제목을 입력하세요">
+                </div>
+
+                <!-- 가게 이름 입력 -->
+                <div>
+                    <label for="store" class="block text-sm font-medium text-gray-700 mb-2">가게 이름</label>
+                    <input type="text" id="store" name="store" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="가게 이름을 입력하세요">
+                </div>
+
+                <!-- 메뉴 입력 -->
+                <div>
+                    <label for="menu-input" class="block text-sm font-medium text-gray-700 mb-2">메뉴</label>
+                    <div class="space-y-2">
+                        <div id="menu-tags" class="flex flex-wrap gap-2"></div>
+                        <input type="text" id="menu-input"
+                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="메뉴를 입력하고 Enter를 누르세요">
+                        <input type="hidden" id="menus" name="menus" value="">
+                    </div>
+                </div>
+
+                <!-- 내용 입력 -->
+                <div>
+                    <label for="content" class="block text-sm font-medium text-gray-700 mb-2">내용</label>
+                    <textarea id="content" name="content" rows="4" required
+                              class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="내용을 입력하세요"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 주문 정보 섹션 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold mb-4">주문 정보</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="my-portion" class="block text-sm font-medium text-gray-700 mb-2">내가 먹을 수량</label>
+                    <input type="number" id="my-portion" name="my-portion" min="1" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="total-portion" class="block text-sm font-medium text-gray-700 mb-2">총 수량</label>
+                    <input type="number" id="total-portion" name="total-portion" min="1" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="total-price" class="block text-sm font-medium text-gray-700 mb-2">총 가격</label>
+                    <input type="number" id="total-price" name="total-price" min="0" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="col-span-2">
+                    <label for="deadline" class="block text-sm font-medium text-gray-700 mb-2">마감 일시</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="deadline-date" name="deadline-date" required
+                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="deadline-time" name="deadline-time" required
+                                class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">시간 선택</option>
+                        </select>
+                        <input type="hidden" id="deadline" name="deadline" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 등록 버튼 -->
+        <div class="flex justify-end">
+            <button type="submit" 
+                    class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
+                등록하기
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const menuInput = document.getElementById('menu-input');
+    const menuTags = document.getElementById('menu-tags');
+    const menusInput = document.getElementById('menus');
+    let menus = [];
+
+    function updateMenus() {
+        menusInput.value = JSON.stringify(menus);
+        menuTags.innerHTML = menus.map(menu => `
+            <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center">
+                <span>${menu}</span>
+                <button type="button" class="ml-2 text-blue-600 hover:text-blue-800" 
+                        onclick="this.parentElement.remove();menus=menus.filter(m=>m!=='${menu}');updateMenus();">
+                    ×
+                </button>
+            </div>
+        `).join('');
+    }
+
+    menuInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const menu = this.value.trim();
+            if (menu && !menus.includes(menu)) {
+                menus.push(menu);
+                updateMenus();
+                this.value = '';
+            }
+        }
+    });
+
+    menuInput.addEventListener('blur', function() {
+        const menu = this.value.trim();
+        if (menu && !menus.includes(menu)) {
+            menus.push(menu);
+            updateMenus();
+            this.value = '';
+        }
+    });
+
+    // 시간 선택 옵션 생성
+    const timeSelect = document.getElementById('deadline-time');
+    for (let i = 0; i <= 24; i++) {
+        const hour = i.toString().padStart(2, '0');
+        const option = document.createElement('option');
+        option.value = `${hour}:00`;
+        option.textContent = `${hour}:00`;
+        timeSelect.appendChild(option);
+    }
+
+    // 날짜와 시간 선택시 hidden input 업데이트
+    const dateInput = document.getElementById('deadline-date');
+    const deadlineInput = document.getElementById('deadline');
+
+    function updateDeadline() {
+        if (dateInput.value && timeSelect.value) {
+            deadlineInput.value = `${dateInput.value}T${timeSelect.value}`;
+        }
+    }
+
+    dateInput.addEventListener('change', updateDeadline);
+    timeSelect.addEventListener('change', updateDeadline);
+
+    // 오늘 날짜를 최소 날짜로 설정
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const formattedToday = `${yyyy}-${mm}-${dd}`;
+    dateInput.min = formattedToday;
+});
+</script>
+{% endblock %}
+
+<!-- 푸터 포함 -->
+{% block footer %}
+{% include 'common/footer.html' %}
 {% endblock %}
