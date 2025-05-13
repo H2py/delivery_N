@@ -11,10 +11,147 @@
 
 <!-- 컨텐츠 포함 -->
 {% block content %}
-<div class="max-w-2xl mx-auto">
+<div class="font-notokr max-w-2xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-6">마이페이지</h1>
-    <!-- 마이페이지 내용 -->
+
+    <!-- 프로필 정보 섹션 -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">프로필 정보</h2>
+        <form method="post" class="space-y-4">
+            <!-- 닉네임 수정 -->
+            <div>
+                <label for="nickname" class="block text-sm font-medium text-gray-700 mb-2">닉네임</label>
+                <div class="flex gap-2">
+                    <input type="text" id="nickname" name="nickname" required
+                           class="flex-1 border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           value="김철수">
+                    <button type="submit" name="action" value="update_nickname"
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                        변경
+                    </button>
+                </div>
+            </div>
+
+            <!-- 비밀번호 수정 -->
+            <div class="pt-4 border-t">
+                <h3 class="text-lg font-semibold mb-3">비밀번호 변경</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label for="current-password" class="block text-sm font-medium text-gray-700 mb-2">현재 비밀번호</label>
+                        <input type="password" id="current-password" name="current_password" required
+                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호</label>
+                        <input type="password" id="new-password" name="new_password" required
+                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
+                        <input type="password" id="confirm-password" name="confirm_password" required
+                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p id="password-mismatch" class="text-red-500 text-sm mt-1 hidden">비밀번호가 일치하지 않습니다.</p>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" name="action" value="update_password"
+                                class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                            비밀번호 변경
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 계정 관리 섹션 -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4">계정 관리</h2>
+        <div class="flex gap-4">
+            <form>
+                <button type="submit" class="w-full bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-200 font-medium">
+                    로그아웃
+                </button>
+            </form>
+            <button type="button" id="delete-account"
+                    class="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
+                회원 탈퇴
+            </button>
+        </div>
+    </div>
 </div>
+
+<!-- 회원 탈퇴 확인 모달 -->
+<div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold mb-4">회원 탈퇴</h3>
+        <p class="text-gray-600 mb-4">정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+        <form>
+            <div class="mb-4">
+                <label for="confirm-delete-password" class="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인</label>
+                <input type="password" id="confirm-delete-password" name="password" required
+                       class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" id="cancel-delete"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
+                    취소
+                </button>
+                <button type="submit"
+                        class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
+                    탈퇴하기
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('delete-modal');
+    const deleteAccountBtn = document.getElementById('delete-account');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+
+    // 비밀번호 확인 검증
+    const newPasswordInput = document.getElementById('new-password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const passwordMismatch = document.getElementById('password-mismatch');
+
+    function checkPasswordMatch() {
+        if (confirmPasswordInput.value && newPasswordInput.value !== confirmPasswordInput.value) {
+            passwordMismatch.classList.remove('hidden');
+        } else {
+            passwordMismatch.classList.add('hidden');
+        }
+    }
+
+    newPasswordInput.addEventListener('input', checkPasswordMatch);
+    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+    // 회원 탈퇴 모달 표시
+    deleteAccountBtn.addEventListener('click', function() {
+        deleteModal.classList.remove('hidden');
+    });
+
+    // 회원 탈퇴 모달 닫기
+    cancelDeleteBtn.addEventListener('click', function() {
+        deleteModal.classList.add('hidden');
+    });
+
+    // 모달 외부 클릭시 닫기
+    deleteModal.addEventListener('click', function(e) {
+        if (e.target === deleteModal) {
+            deleteModal.classList.add('hidden');
+        }
+    });
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !deleteModal.classList.contains('hidden')) {
+            deleteModal.classList.add('hidden');
+        }
+    });
+});
+</script>
 {% endblock %}
 
 <!-- 푸터 포함 -->
