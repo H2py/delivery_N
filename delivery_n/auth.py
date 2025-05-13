@@ -46,10 +46,10 @@ def login():
         password = request.form['password']
         db = get_db()
         error = None
-        user = db.users.find_one({'user': username})
+        user = db.users.find_one({'username': username}) 
         
         if user is None:
-            error = 'Inorrect username.'
+            error = 'Incorrect username.' 
         elif not check_password_hash(user['password'], password):
             error = "Incorrect password."
             
@@ -62,6 +62,26 @@ def login():
         
     return render_template('auth/login.html')
 
+@bp.route('/recover', methods=('GET', 'POST'))
+def recover():
+    if request.method == 'POST':
+        email = request.form['email']
+        db = get_db()
+        error = None
+        
+        user = db.users.find_one({'email': email})
+        if user is None:
+            error = '등록된 이메일이 없습니다.'
+        
+        if error is None:
+            # 실제로는 여기서 이메일 전송 로직이 필요 (예: 비밀번호 재설정 링크 생성 및 전송)
+            # 지금은 테스트용으로 플래시 메시지만 표시
+            flash('비밀번호 재설정 링크를 이메일로 보냈습니다.')
+            return redirect(url_for('auth.login'))
+        
+        flash(error)
+    
+    return render_template('auth/recover.html')
 
 @bp.before_app_request
 def load_logged_in_user():
