@@ -4,13 +4,17 @@ from flask import (Blueprint, flash, g, redirect, render_template, request, sess
                    url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
+from .db import get_db
+import sys
+
+print(sys.path)
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
-        username = reqeust.form['username']
+        username = request.form['username']
         password = request.form['password']
         db = get_db()
         error = None
@@ -23,13 +27,14 @@ def register():
         
         if error is None:
             try:
-                db.execute("insert into user (username, password) values(?, ?)", (username, generate_password_hash(password)))
-                db.commit()
-            except db.IntegrityError:
-                error = f"User {username} is already registered."
-            else:
+                db.users.insert_one({
+                    'username': username,
+                    'password': generate_password_hash(password)
+                })
                 return redirect(url_for('auth.login'))
-            
+            except Exception as e:
+                error = f"Registration failed: {e}"
+
         flash(error)
     return render_template('auth/register.html')
 
@@ -41,7 +46,7 @@ def login():
         password = request.form['password']
         db = get_db()
         error = None
-        user = db.execute("SELECT * FROM user WHERE username = ?", (username,)).fetchone()
+        user = db.users.find_one({'user': username})
         
         if user is None:
             error = 'Inorrect username.'
@@ -50,7 +55,7 @@ def login():
             
         if error is None:
             session.clear()
-            session['user_id'] = user['id']
+            session['user_id'] = str(user['_id'])
             return redirect(url_for('index'))
         
         flash(error)
@@ -65,7 +70,9 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        g.user = get_db().execute('SELECT * FROM user WHERE id = ?', (user_id,)).fetchone()
+        from bson.objectid import ObjectId
+        db = get_db()
+        g.user = db.users.find_one({'_id': ObjectId(user_id)})
         
 @bp.route('/logout')
 def logout():
