@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}배달N빵!{% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        main: '#4BD72F'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="mx-auto max-w-[640px] relative min-h-screen bg-white">
+        {% block header %}
+        {% endblock %}
+    
+        <main class="pt-16 pb-20">
+            {% block content %}
+            {% endblock %}
+        </main>
+    
+        {% block footer %}
+        {% endblock %}
+    </div>
+</body>
+</html>
