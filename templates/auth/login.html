@@ -1,0 +1,59 @@
+{% extends 'common/base.html' %}
+
+<!-- SEO 관련 헤더 태그 모음 -->
+{% block title %}배달N빵! 로그인{% endblock %}
+<!-- SEO 관련 헤더 태그 모음 끝 -->
+
+<!-- 컨텐츠 포함 -->
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[calc(100vh-9rem)] px-4 sm:px-6">
+    <div class="w-full max-w-sm sm:max-w-md">
+        <!-- 로고 영역 -->
+        <div class="text-center">    
+            <img src="{{ url_for('static', filename='icons/Logo.svg') }}" alt="배달N빵! 로고" class="w-48 h-48 sm:w-64 sm:h-64 mx-auto">
+        </div>
+
+        <!-- 폼 영역 -->
+        <form class="space-y-6">
+            <div class="space-y-4 font-notokr font-medium">
+                <div>
+                    <label for="email" class="block text-lg sm:text-xl text-gray mb-2">이메일</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="이메일을 입력해주세요." 
+                        required
+                        class="w-full px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg border-2 border-main rounded-lg focus:outline-none focus:ring-2 focus:ring-main focus:border-transparent font-medium"
+                    >
+                </div>
+                <div>
+                    <label for="password" class="block text-lg sm:text-xl text-gray mb-2">비밀번호</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="비밀번호를 입력해주세요." 
+                        required
+                        class="w-full px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg border-2 border-main rounded-lg focus:outline-none focus:ring-2 focus:ring-main focus:border-transparent font-medium"
+                    >
+                </div>
+            </div>
+
+            <!-- 로그인 버튼 -->
+            <button 
+                type="submit" 
+                class="w-full py-3 sm:py-4 text-xl sm:text-2xl border-2 border-transparent text-white bg-main rounded-lg hover:bg-white hover:text-main hover:border-2 hover:border-main transition-colors duration-200"
+            >
+                로그인
+            </button>
+        </form>
+
+        <!-- 추가 버튼 영역 -->
+        <div class="flex items-center justify-center space-x-6 sm:space-x-8 mt-6 sm:mt-8">
+            <button type="button" class="text-lg sm:text-xl text-gray hover:text-main transition-colors">비밀번호 찾기</button>
+            <button type="button" class="text-lg sm:text-xl text-gray hover:text-main transition-colors">회원가입</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
