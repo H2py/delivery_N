@@ -7,19 +7,108 @@
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/css">
+        @font-face {
+            font-family: 'BlackHanSans';
+            src: url('/static/fonts/blackHanSans/BlackHanSans-Regular.woff2') format('woff2'),
+                 url('/static/fonts/blackHanSans/BlackHanSans-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        @font-face {
+            font-family: 'NotoSansKR';
+            src: url('/static/fonts/NotoSansKR/NotoSansKR-Bold.woff2') format('woff2'),
+                 url('/static/fonts/NotoSansKR/NotoSansKR-Bold.woff') format('woff');
+            font-weight: bold;
+            font-style: bold;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'NotoSansKR';
+            src: url('/static/fonts/NotoSansKR/NotoSansKR-Medium.woff2') format('woff2'),
+                 url('/static/fonts/NotoSansKR/NotoSansKR-Medium.woff') format('woff');
+            font-weight: medium;
+            font-style: medium;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'NotoSansKR';
+            src: url('/static/fonts/NotoSansKR/NotoSansKR-Regular.woff2') format('woff2'),
+                 url('/static/fonts/NotoSansKR/NotoSansKR-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'NotoSansKR';
+            src: url('/static/fonts/NotoSansKR/NotoSansKR-Thin.woff2') format('woff2'),
+                 url('/static/fonts/NotoSansKR/NotoSansKR-Thin.woff') format('woff');
+            font-weight: thin;
+            font-style: thin;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Roboto';
+            src: url('/static/fonts/Roboto/Roboto-Bold.woff2') format('woff2'),
+                 url('/static/fonts/Roboto/Roboto-Bold.woff') format('woff');
+            font-weight: bold;
+            font-style: bold;
+            font-display: swap;
+        }
+        
+        @font-face {
+            font-family: 'Roboto';
+            src: url('/static/fonts/Roboto/Roboto-Medium.woff2') format('woff2'),
+                 url('/static/fonts/Roboto/Roboto-Medium.woff') format('woff');
+            font-weight: medium;
+            font-style: medium;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Roboto';
+            src: url('/static/fonts/Roboto/Roboto-Regular.woff2') format('woff2'),
+                 url('/static/fonts/Roboto/Roboto-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Roboto';
+            src: url('/static/fonts/Roboto/Roboto-Thin.woff2') format('woff2'),
+                 url('/static/fonts/Roboto/Roboto-Thin.woff') format('woff');
+            font-weight: thin;
+            font-style: thin;
+            font-display: swap;
+        }
+
+    </style>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        main: '#4BD72F'
+                        main: '#4BD72F',
+                        gray: '#707070'
+                    },
+                    fontFamily: {
+                        'hans': ['BlackHanSans', 'system-ui'],
+                        'notokr': ['NotoSansKR', 'sans-serif'],
+                        'roboto': ['Roboto', 'sans-serif']
                     }
                 }
             }
         }
     </script>
 </head>
-<body>
+<body class="font-hans">
     <div class="mx-auto max-w-[640px] relative min-h-screen bg-white">
         {% block header %}
         {% endblock %}
