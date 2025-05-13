@@ -1,0 +1,29 @@
+{% extends 'base.html' %} {% block header %}
+<h1>{% block title %}Register{% endblock %}</h1>
+{%endblock%} {% block content %}
+<form method="POST"></form>
+<label>
+  <input type="text" name="username" placeholder="Username" required />
+</label>
+<label>
+  <input type="email" name="id" placeholder="Enter your Email" required />
+</label>
+<label>
+  <input
+    type="password"
+    name="password"
+    placeholder="Enter your password"
+    required
+  />
+</label>
+<label>
+  <input
+    type="password"
+    name="confirm_password"
+    placeholder="Enter your confirm Password"
+    required
+  />
+</label>
+{% if error %}
+<p style="color: red">{{ error }}</p>
+{% endif %} {% endblock %}
