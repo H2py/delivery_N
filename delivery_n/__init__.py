@@ -69,5 +69,6 @@ def create_app(test_config=None):
 
     app.after_request(refresh_expiring_jwts)
 
+
     return app
         
