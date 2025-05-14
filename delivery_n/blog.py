@@ -139,6 +139,10 @@ def create():
 def get_post(id):
     db = get_db()
     try:
+        # ObjectId 유효성 검사
+        if not ObjectId.is_valid(id):
+            abort(404, "Invalid post ID format")
+            
         post = db.posts.aggregate([
             {
                 "$match": {"_id": ObjectId(id)}
@@ -152,25 +156,42 @@ def get_post(id):
                 }
             },
             {
-                "$unwind": "$author"
+                "$unwind": {
+                    "path": "$author",
+                    "preserveNullAndEmptyArrays": True
+                }
             },
             {
                 "$project": {
                     "id": "$_id",
                     "title": 1,
-                    "body": 1,
-                    "created": 1,
+                    "content": 1,
+                    "store_name": 1,
+                    "menus": 1,
+                    "total_price": 1,
+                    "my_portion": 1,
+                    "total_portion": 1,
+                    "deadline": 1,
+                    "status": 1,
+                    "created_at": 1,
+                    "participants": 1,
                     "author_id": 1,
-                    "username": "$author.username"
+                    "author_name": {"$ifNull": ["$author.username", "알 수 없음"]}
                 }
             }
-        ]).next()  
-    except (StopIteration, ValueError):
-        abort(404, f"Post id {id} doesn't exist.")
+        ]).try_next()
 
-    return post
-    
-    
+        if post is None:
+            abort(404, f"Post id {id} doesn't exist.")
+
+        if request.method == 'GET':
+            return render_template('blog/detail.html', post=post)
+        return post
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching post {id}: {str(e)}")
+        abort(404, f"Error fetching post: {str(e)}")
+
 @bp.route('/update/<id>', methods=['GET', 'POST'])
 @login_required
 def update(id, check_author=True):
