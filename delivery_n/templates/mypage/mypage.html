@@ -17,57 +17,79 @@
     <!-- 프로필 정보 섹션 -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-xl font-bold mb-4">프로필 정보</h2>
-        <form method="post" class="space-y-4">
-            <!-- 닉네임 수정 -->
+        
+        <!-- 닉네임 수정 폼 -->
+        <form id="nickname-form" class="space-y-4">
             <div>
                 <label for="nickname" class="block text-sm font-medium text-gray-700 mb-2">닉네임</label>
                 <div class="flex gap-2">
                     <input type="text" id="nickname" name="nickname" required
                            class="flex-1 border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           value="김철수">
-                    <button type="submit" name="action" value="update_nickname"
+                           value="{{ g.user.username if g.user }}">
+                    <button type="submit"
                             class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
                         변경
                     </button>
                 </div>
             </div>
+        </form>
 
-            <!-- 비밀번호 수정 -->
-            <div class="pt-4 border-t">
-                <h3 class="text-lg font-semibold mb-3">비밀번호 변경</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label for="current-password" class="block text-sm font-medium text-gray-700 mb-2">현재 비밀번호</label>
-                        <input type="password" id="current-password" name="current_password" required
-                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호</label>
-                        <input type="password" id="new-password" name="new_password" required
-                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
-                        <input type="password" id="confirm-password" name="confirm_password" required
-                               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <p id="password-mismatch" class="text-red-500 text-sm mt-1 hidden">비밀번호가 일치하지 않습니다.</p>
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="submit" name="action" value="update_password"
-                                class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
-                            비밀번호 변경
-                        </button>
-                    </div>
+        <!-- 비밀번호 수정 폼 -->
+        <form id="password-form" class="pt-4 border-t">
+            <h3 class="text-lg font-semibold mb-3">비밀번호 변경</h3>
+            <div class="space-y-3">
+                <div>
+                    <label for="current-password" class="block text-sm font-medium text-gray-700 mb-2">현재 비밀번호</label>
+                    <input type="password" id="current-password" name="current_password" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호</label>
+                    <input type="password" id="new-password" name="new_password" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
+                    <input type="password" id="confirm-password" name="confirm_password" required
+                           class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p id="password-mismatch" class="text-red-500 text-sm mt-1 hidden">비밀번호가 일치하지 않습니다.</p>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                        비밀번호 변경
+                    </button>
                 </div>
             </div>
         </form>
+    </div>
+
+    <!-- 내 활동 내역 섹션 -->
+    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 class="text-xl font-bold mb-4">내 활동 내역</h2>
+        <div class="flex flex-col gap-3">
+            <a href="{{ url_for('mypage.my_write') }}" 
+               class="w-full bg-blue-50 text-blue-700 border border-blue-200 px-4 py-3 rounded-md hover:bg-blue-100 font-medium flex items-center justify-between group transition-all">
+                <span>내가 쓴 글 목록</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </a>
+            <a href="{{ url_for('mypage.my_join') }}"
+               class="w-full bg-green-50 text-green-700 border border-green-200 px-4 py-3 rounded-md hover:bg-green-100 font-medium flex items-center justify-between group transition-all">
+                <span>내가 참여한 글 목록</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </a>
+        </div>
     </div>
 
     <!-- 계정 관리 섹션 -->
     <div class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-xl font-bold mb-4">계정 관리</h2>
         <div class="flex gap-4">
-            <form>
+            <form id="logout-form">
                 <button type="submit" class="w-full bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-200 font-medium">
                     로그아웃
                 </button>
@@ -85,7 +107,7 @@
     <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
         <h3 class="text-xl font-bold mb-4">회원 탈퇴</h3>
         <p class="text-gray-600 mb-4">정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
-        <form>
+        <form id="delete-form">
             <div class="mb-4">
                 <label for="confirm-delete-password" class="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인</label>
                 <input type="password" id="confirm-delete-password" name="password" required
@@ -110,8 +132,47 @@ document.addEventListener('DOMContentLoaded', function() {
     const deleteModal = document.getElementById('delete-modal');
     const deleteAccountBtn = document.getElementById('delete-account');
     const cancelDeleteBtn = document.getElementById('cancel-delete');
+    const logoutBtn = document.getElementById('logout-btn');
 
-    // 비밀번호 확인 검증
+    // 닉네임 변경 폼 처리
+    const nicknameForm = document.getElementById('nickname-form');
+    nicknameForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        try {
+            const response = await fetch('/mypage/modify_name', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: document.getElementById('nickname').value
+                })
+            });
+            
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            alert('닉네임 변경 중 오류가 발생했습니다.');
+            console.error('Error:', error);
+        }
+    });
+
+    // 비밀번호 변경 폼 처리
+    const passwordForm = document.getElementById('password-form');
     const newPasswordInput = document.getElementById('new-password');
     const confirmPasswordInput = document.getElementById('confirm-password');
     const passwordMismatch = document.getElementById('password-mismatch');
@@ -119,13 +180,49 @@ document.addEventListener('DOMContentLoaded', function() {
     function checkPasswordMatch() {
         if (confirmPasswordInput.value && newPasswordInput.value !== confirmPasswordInput.value) {
             passwordMismatch.classList.remove('hidden');
+            return false;
         } else {
             passwordMismatch.classList.add('hidden');
+            return true;
         }
     }
 
     newPasswordInput.addEventListener('input', checkPasswordMatch);
     confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+    passwordForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (!checkPasswordMatch()) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/mypage/modify_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_password: document.getElementById('current-password').value,
+                    new_password: newPasswordInput.value,
+                    confirm_password: confirmPasswordInput.value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert(data.message);
+                passwordForm.reset();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            alert('비밀번호 변경 중 오류가 발생했습니다.');
+            console.error('Error:', error);
+        }
+    });
 
     // 회원 탈퇴 모달 표시
     deleteAccountBtn.addEventListener('click', function() {
@@ -148,6 +245,37 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && !deleteModal.classList.contains('hidden')) {
             deleteModal.classList.add('hidden');
+        }
+    });
+
+    // 로그아웃 처리
+    const logoutForm = document.getElementById('logout-form');
+
+    logoutForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        try {
+            const response = await fetch('/auth/logout', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (data.data && data.data.redirect_url) {
+                    window.location.href = data.data.redirect_url;
+                } else {
+                    window.location.href = '/auth/login';  // 기본 리다이렉트 URL
+                }
+            } else {
+                alert(data.message || '로그아웃 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
         }
     });
 });

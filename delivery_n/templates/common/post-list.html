@@ -1,0 +1,61 @@
+<!-- components/post-list.html -->
+{% macro post_list(posts, list_type) %}
+  <div class="flex-1 overflow-y-auto">
+    {% if list_type == 'my_write' %}
+              <div class="text-lg font-notokr font-bold text-black mt-2">내가 작성한 글</div>
+            {% endif %}
+            {% if list_type == 'my_join' %}
+              <div class="text-lg font-notokr font-bold text-black mt-2">참여중</div>
+            {% endif %}
+    <ul class="space-y-4 font-notokr">
+      {% if posts %}
+        {% for post in posts %}
+          <li class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200"
+              data-deadline="{{ post.deadline.isoformat() if post.deadline else '' }}"
+              data-post-id="{{ post.id }}">
+            <div class="flex flex-col space-y-3">
+                <!-- 제목 및 가게명 -->
+                <div class="flex items-end gap-4 border-b border-gray-200">
+                  <h2 class="text-lg sm:text-xl font-bold text-gray-800 post-title">{{ post.title }}</h2>
+                  <p class="text-sm sm:text-base text-gray-600">가게명 : {{ post.store_name }}</p>
+                  <p class="text-gray-600">작성자 : {{ post.username }}</p>
+                </div>
+
+                <!-- 메뉴 -->
+                <div class="text-sm">
+                  <span class="text-gray-600">메뉴 :</span>
+                  <ul class="inline-flex gap-2">
+                    {% for menu in post.menus %}
+                      <li class="text-main">{{ menu }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+
+                <!-- 배달 정보 -->
+                <div class="flex items-end justify-between border-gray-200">
+                  <div class="text-sm text-gray-600 mb-2">
+                    마감시간 : {{ post.deadline.strftime('%m월 %d일 %H:%M') }}
+                  </div>
+                  <div class="flex flex-col items-end">
+                    <span class="text-sm text-main font-medium">{{ post.total_portion }}명 참여중</span>
+                    <p class="text-sm text-gray-600">1인당 {{ '{:,}'.format(post.total_price // post.total_portion) }}원 ({{ post.my_portion }}/{{ post.total_portion }})</p>
+                  </div>
+                </div>
+              </div>
+
+          </li>
+        {% endfor %}
+      {% else %}
+        <li class="text-center py-8 text-gray-500">
+          {% if list_type == 'my_write' %}
+            작성한 글이 없습니다.
+          {% elif list_type == 'my_join' %}
+            참여한 글이 없습니다.
+          {% else %}
+            등록된 게시글이 없습니다.
+          {% endif %}
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+{% endmacro %}

@@ -61,6 +61,7 @@ def index():
 
     return render_template('main.html', posts=posts_list)
 
+
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():

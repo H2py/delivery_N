@@ -1,0 +1,80 @@
+{% extends 'common/base.html' %}
+{% from "common/post-list.html" import post_list %}
+
+<!-- SEO 관련 헤더 태그 모음 -->
+{% block title %}배달N빵! 내가 쓴 글 목록{% endblock %}
+<!-- SEO 관련 헤더 태그 모음 끝 -->
+
+<!-- 헤더 포함 -->
+{% block header %}
+    {% include 'common/header.html' %}
+{% endblock %}
+
+<!-- 컨텐츠 포함 -->
+{% block content %}
+<div class="container h-[calc(100vh-160px)] py-2 flex flex-col">
+    {{ post_list(posts, 'my_join') }}
+
+ <!-- 고정된 컨트롤 영역 -->
+ <div
+   class="font-notokr flex justify-between items-center list-control bg-white px-4"
+ >
+   <!-- 왼쪽 여백을 위한 빈 div -->
+   <div class="w-[120px]"></div>
+
+   <!-- 페이지네이션 -->
+   <div class="flex justify-center items-center space-x-2">
+     <button
+       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+     >
+       이전
+     </button>
+     <button
+       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+     >
+       1
+     </button>
+     <button
+       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+     >
+       2
+     </button>
+     <button
+       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+     >
+       3
+     </button>
+     <button
+       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+     >
+       4
+     </button>
+     <button
+       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+     >
+       5
+     </button>
+     <button
+       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+     >
+       다음
+     </button>
+   </div>
+
+   <!-- 글쓰기 버튼 -->
+   <div class="w-[120px] flex justify-end">
+    <a
+      href="{{ url_for('blog.create') }}"
+      class="px-6 py-2 text-base border-2 border-transparent text-white bg-main rounded-lg hover:bg-white hover:text-main hover:border-2 hover:border-main transition-colors duration-200"
+    >
+      글쓰기
+    </a>
+  </div>
+ </div>
+</div>
+{% endblock %}
+
+<!-- 푸터 포함 -->
+{% block footer %}
+    {% include 'common/footer.html' %}
+{% endblock %}
