@@ -1,21 +1,31 @@
 import functools
-
-from flask import (Blueprint, flash, g, redirect, render_template, request, session,
-                   url_for)
+from flask import Blueprint, flash, g, redirect, render_template, request, url_for, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from .db import get_db
-import sys
-
-print(sys.path)
+from flask_jwt_extended import create_access_token, get_jwt_identity
+from bson.objectid import ObjectId
+from .email import send_mail
+import random
+from datetime import datetime, timedelta
+from .utils import make_response  
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for('auth.login'))
+        return view(**kwargs)
+    return wrapped_view
 
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        email = request.form['email']
         db = get_db()
         error = None
         
@@ -23,21 +33,85 @@ def register():
             error = 'Username is required'
         elif not password:
             error = 'Password is required'    
-        
+        elif not email:
+            error = 'Email is required'
+        elif db.users.find_one({'username': username}):
+            error = 'Username already exists'
+        elif db.users.find_one({'email': email}):
+            error = 'Email already exists'
+            
+        otp_record = db.top_tokens.find_one({'email': email, 'verifed': True})
+        if not otp_record:
+            error = '이메일 인증이 필요합니다'    
         
         if error is None:
             try:
                 db.users.insert_one({
                     'username': username,
+                    'email': email,
                     'password': generate_password_hash(password)
                 })
+                db.otp_tokens.delete_one({'email': email})
                 return redirect(url_for('auth.login'))
             except Exception as e:
                 error = f"Registration failed: {e}"
 
-        flash(error)
     return render_template('auth/register.html')
 
+@bp.route('/send-otp', methods=['POST'])
+def send_otp():
+    data = request.get_json()
+    email = data.get('email')
+    if not email:
+        return make_response(False, "이메일이 필요합니다.")
+    
+    db = get_db()
+    if db.users.find_one({'email': email}):
+        return make_response(False, "이미 가입된 이메일입니다.")
+
+    otp = str(random.randint(100000, 999999))
+    expires_at = datetime.now() + timedelta(minutes=5)
+    db.otp_tokens.delete_one({'email': email})
+    db.otp_tokens.insert_one({
+        'email': email,
+        'otp': otp,
+        'created_at': datetime.now(),
+        'expires_at': expires_at,
+        'verified': False
+    })
+
+    if send_mail(email, otp):
+        return make_response(True, "인증 코드가 전송되었습니다.")
+    else:
+        return make_response(False, "이메일 전송에 실패했습니다.", status_code=500)
+
+@bp.route('verify-otp', methods=['POST'])
+def verify_otp():
+    data = request.get_json()
+    email = data.get('email')
+    otp = data.get('otp')
+
+    if not email or not otp:
+        return make_response(False, "이메일, 인증코드가 필요합니다.")
+
+    db = get_db()
+    otp_record = db.otp_tokens.find_one({'email': email, 'verified': True})
+
+    if not otp_record:
+        return make_response(False, "인증코드가 존재하지 않습니다.")
+
+    if datetime.now() > otp_record['expires_at']:
+        db.otp_tokens.delete_one({'email': email})
+        return make_response(False, "인증코드가 만료되었습니다.")
+
+    if otp != otp_record['otp']:
+        return make_response(False, "인증 코드가 일치하지 않습니다.")
+
+    db.otp_tokens.update_one(
+        {'email': email},
+        {'$set': {'verified': True}}
+    )
+    return make_response(True, "인증이 완료되었습니다.")
 
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
@@ -54,9 +128,10 @@ def login():
             error = "Incorrect password."
             
         if error is None:
-            session.clear()
-            session['user_id'] = str(user['_id'])
-            return redirect(url_for('index'))
+            access_token = create_access_token(identity=str(user['_id']))
+            response = redirect(url_for('blog.index'))
+            response.set_cookie('access_token', access_token, httponly=True, secure=False)
+            return response
         
         flash(error)
         
@@ -67,6 +142,7 @@ def recover():
     if request.method == 'POST':
         email = request.form['email']
         db = get_db()
+        otp = str(random.randint(100000, 999999)) 
         error = None
         
         user = db.users.find_one({'email': email})
@@ -74,9 +150,10 @@ def recover():
             error = '등록된 이메일이 없습니다.'
         
         if error is None:
-            # 실제로는 여기서 이메일 전송 로직이 필요 (예: 비밀번호 재설정 링크 생성 및 전송)
-            # 지금은 테스트용으로 플래시 메시지만 표시
-            flash('비밀번호 재설정 링크를 이메일로 보냈습니다.')
+            if send_mail(email, otp):
+                flash('비밀번호 재설정 링크를 이메일로 보냈습니다.')
+            else:
+                flash('이메일 전송에 실패했습니다. 다시 시도해주세요/')
             return redirect(url_for('auth.login'))
         
         flash(error)
@@ -85,28 +162,28 @@ def recover():
 
 @bp.before_app_request
 def load_logged_in_user():
-    user_id = session.get('user_id')
+    token = request.cookies.get('access_token')
     
-    if user_id is None:
+    if not token:
         g.user = None
-    else:
-        from bson.objectid import ObjectId
-        db = get_db()
-        g.user = db.users.find_one({'_id': ObjectId(user_id)})
+        return
+    try:
+        user_id = get_jwt_identity()
+        if user_id:
+            db = get_db()
+            g.user = db.users.find_one({'_id': ObjectId(user_id)}) 
+        else:
+            g.user = None
+    except:
+        g.user = None
         
 @bp.route('/logout')
 def logout():
-    session.clear()
-    return redirect(url_for('index'))
+    response = redirect(url_for('auth.login'))
+    response.delete_cookie('access_token')
+    return response
 
 @bp.route('/mypage', methods=('GET', 'POST'))
+@login_required
 def mypage():
     return render_template('mypage/mypage.html')
-
-def login_required(view):
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
-        if g.user is None:
-            return redirect(url_for('auth.login'))
-        return view(**kwargs)
-    return wrapped_view
