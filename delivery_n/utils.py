@@ -25,3 +25,23 @@ def refresh_expiring_jwts(response):
         return response
     except (RuntimeError, KeyError):
         return response
+    
+    
+def get_next_sequence(db, name):
+    # name을 기반으로 컬렉션 결정 (예: 'post_id'면 'posts' 컬렉션 사용)
+    if name == 'post_id':
+        collection_name = 'posts'
+    else:
+        collection_name = name
+    
+    # 해당 컬렉션에서 가장 큰 number 값 찾기
+    result = db[collection_name].find_one(
+        {},
+        sort=[("number", -1)]  # number 필드 기준 내림차순 정렬
+    )
+    
+    # 결과가 있으면 number + 1 반환, 없으면 1 반환
+    if result and 'number' in result:
+        return result['number'] + 1
+    else:
+        return 1

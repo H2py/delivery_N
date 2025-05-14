@@ -90,7 +90,7 @@ def join_post(post_id):
                 }
                 result = db.participants.insert_one(new_participant, session=session)
 
-                return make_json_response(True, "참여가 완료되었습니다.")
+                return make_json_response(True, "참여 신청이 완료되었습니다.")
 
     except Exception as e:
         return make_json_response(False, f"오류가 발생했습니다: {str(e)}"), 500
