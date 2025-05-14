@@ -11,12 +11,73 @@ from .utils import make_json_response
 
 bp = Blueprint('mypage', __name__, url_prefix='/mypage')
 
+@bp.route('/my_write', methods=['GET'])
+@login_required
+def my_write():
+    db = get_db()
+    posts = db.posts.aggregate([
+        {
+            "$match": {"author_id": ObjectId(g.user['_id'])}
+        },
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "author_id",
+                "foreignField": "_id",
+                "as": "author"
+            }
+        },
+        {
+            "$set": {
+                "author": {
+                    "$cond": {
+                        "if": { "$gt": [{ "$size": "$author" }, 0] },
+                        "then": { "$arrayElemAt": ["$author", 0] },
+                        "else": { "username": "알 수 없음" }
+                    }
+                }
+            }
+        },
+        {
+            "$project": {
+                "id": "$_id",
+                "title": 1,
+                "content": 1,
+                "author_id": 1,
+                "username": "$author.username",
+                "store_name": 1,
+                "menus": 1,
+                "total_price": 1,
+                "my_portion": 1,
+                "total_portion": 1,
+                "deadline": 1,
+                "status": 1,
+                "created_at": 1,
+                "updated_at": 1
+            }
+        },
+        {
+            "$sort": {"created_at": -1}
+        }
+    ])
+    return render_template('mypage/myWriteList.html', posts=list(posts))
+
+
+@bp.route('/my_join', methods=['GET'])
+@login_required
+def my_join():
+    db = get_db()
+    posts = db.posts.find({'participants': ObjectId(g.user['_id'])})
+    return render_template('mypage/myJoinList.html', posts=posts)
+
+
 @bp.route('/modify_name', methods=['GET', 'POST'])
 # @login_required
 def modify_name():
     db = get_db()
     if request.method == 'POST':
-        new_username = request.form.get('username')
+        data = request.get_json()
+        new_username = data.get('username')
         error = None
 
         if not new_username:
@@ -44,9 +105,11 @@ def modify_password():
     db = get_db()
 
     if request.method == 'POST':
-        current_password = request.form.get('current_password')
-        new_password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
+        data = request.get_json()   
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        confirm_password = data.get('confirm_password')
 
         user = db.users.find_one({'_id': ObjectId(g.user['_id'])})
 
@@ -97,10 +160,8 @@ def delete_account():
     db = get_db()
     db.users.update_one(
         {'_id': ObjectId(g.user['_id'])},
-     {'$set': {'deleted_at': True}} 
+        {'$set': {'deleted_at': True}} 
     )
-    return make_json_response(
-    True,
-    "회원 탈퇴가 완료되었습니다.",
-    {"redirect_url": url_for('index')}
-    ), 200
+    return make_json_response( True, "회원 탈퇴가 완료되었습니다.",{
+        "redirect_url": url_for('index')
+    }), 200
