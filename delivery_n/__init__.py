@@ -1,9 +1,15 @@
+from datetime import datetime, timedelta, timezone
+from bson import ObjectId
 from flask import Flask, render_template, jsonify, request
+import jwt
 from pymongo import MongoClient
 import os
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt, get_jwt_identity, set_access_cookies
 from flask_mail import Mail
 from dotenv import load_dotenv
+
+from delivery_n.db import get_db
+from delivery_n.utils import refresh_expiring_jwts
 
 mail = Mail()
 
@@ -28,8 +34,11 @@ def create_app(test_config=None):
     
     app.config.update({
         "JWT_TOKEN_LOCATION": ["cookies"],
+        "JWT_ACCESS_COOKIE_NAME": "access_token_cookie",
+        "JWT_REFRESH_COOKIE_NAME": "refresh_token_cookie",
         "JWT_COOKIE_SECURE": False,
-        "JWT_COOKIE_CSRF_PROTECT": False
+        "JWT_COOKIE_CSRF_PROTECT": False,
+        "JWT_COOKIE_SAMESITE": "Lax"
     })
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
@@ -38,7 +47,7 @@ def create_app(test_config=None):
     
     mail.init_app(app)
     JWTManager(app)
-    
+        
     from . import db
     db.init_db(app)
     
@@ -52,5 +61,10 @@ def create_app(test_config=None):
     from . import api
     app.register_blueprint(api.bp)
     
+    from . import mypage
+    app.register_blueprint(mypage.bp)    
+
+    app.after_request(refresh_expiring_jwts)
+
     return app
         

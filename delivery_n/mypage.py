@@ -1,12 +1,13 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash,make_response, g, jsonify
-from datetime import datetime
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, g, jsonify
+import datetime
+from flask_jwt_extended import jwt_required
 from werkzeug.exceptions import abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from .auth import login_required
 from .db import get_db
 from werkzeug.security import generate_password_hash, 
 from bson.objectid import ObjectId
-from .utils import make_response
+from .utils import make_json_response
 
 bp = Blueprint('mypage', __name__, url_prefix='/mypage')
 
@@ -24,14 +25,14 @@ def modify_name():
             error = '닉네임은 20자 이내여야 합니다.'
 
         if error:
-             return make_response(False, error)
+             return make_json_response(False, error)
 
         db.users.update_one(
             {"_id": ObjectId(g.user['_id'])},
             {"$set": {"username": new_username}}
         )
         g.user['username'] = new_username  
-        return make_response(True, "닉네임이 성공적으로 변경되었습니다.")
+        return make_json_response(True, "닉네임이 성공적으로 변경되었습니다.")
 
 
     return render_template('mypage/mypage.html')
@@ -87,53 +88,19 @@ def my_posts():
             "created_at": post.get("created_at").isoformat() if post.get("created_at") else None
         })
 
-    return make_response(True, "내 게시글 목록입니다.", posts)
+    return make_json_response(True, "내 게시글 목록입니다.", posts)
+
 
 @bp.route('/delete_account', methods=['POST'])
-@login_required
+@jwt_required()
 def delete_account():
     db = get_db()
-
     db.users.update_one(
         {'_id': ObjectId(g.user['_id'])},
-        {'$set': {'deleted_at': True}}
+     {'$set': {'deleted_at': True}} 
     )
-
-    response = make_response(jsonify({
-        'success': True,
-        'message': '회원탈퇴가 완료되었습니다.'
-    }))
-    response.delete_cookie('access_token')
-
-    return response
-
-@bp.route('/joined_posts', methods=['GET'])
-@login_required
-def joined_posts():
-    db = get_db()
-    query = {
-        "$and": [
-            {
-                "$or": [
-                    {"author_id": ObjectId(g.user['_id'])},
-                    {"participants": ObjectId(g.user['_id'])}
-                ]
-            },
-        ]
-    }
-
-    posts_cursor = db.posts.find(query).sort("created_at", -1)
-
-    posts = []
-    for post in posts_cursor:
-        posts.append({
-            "_id": str(post["_id"]),
-            "title": post.get("title"),
-            "store_name": post.get("store_name"),
-            "menus": post.get("menus"),
-            "content": post.get("content"),
-            "author_id": str(post["author_id"]),
-            "created_at": post.get("created_at").isoformat() if post.get("created_at") else None,
-            "deadline": post.get("deadline").isoformat() if post.get("deadline") else None,
-            "status": post.get("status")
-        })
+    return make_json_response(
+    True,
+    "회원 탈퇴가 완료되었습니다.",
+    {"redirect_url": url_for('index')}
+    ), 200
