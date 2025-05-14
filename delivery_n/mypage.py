@@ -5,7 +5,7 @@ from werkzeug.exceptions import abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from .auth import login_required
 from .db import get_db
-from werkzeug.security import generate_password_hash, 
+from werkzeug.security import generate_password_hash
 from bson.objectid import ObjectId
 from .utils import make_json_response
 
@@ -51,21 +51,21 @@ def modify_password():
         user = db.users.find_one({'_id': ObjectId(g.user['_id'])})
 
         if not current_password or not check_password_hash(user['password'], current_password):
-            return make_response(False, "현재 비밀번호가 일치하지 않습니다.")
+            return make_json_response(False, "현재 비밀번호가 일치하지 않습니다.")
         if not new_password or not confirm_password:
-            return make_response(False, "새 비밀번호와 확인칸 모두 입력해주세요.")
+            return make_json_response(False, "새 비밀번호와 확인칸 모두 입력해주세요.")
         if new_password != confirm_password:
-            return make_response(False, "새 비밀번호가 일치하지 않습니다.")
+            return make_json_response(False, "새 비밀번호가 일치하지 않습니다.")
         if len(new_password) < 5:
-            return make_response(False, "새 비밀번호는 5자 이상이어야 합니다.")
+            return make_json_response(False, "새 비밀번호는 5자 이상이어야 합니다.")
         if check_password_hash(user['password'], new_password):
-            return make_response(False, "기존 비밀번호와 다른 비밀번호를 입력해주세요.")
+            return make_json_response(False, "기존 비밀번호와 다른 비밀번호를 입력해주세요.")
      
         db.users.update_one(
             {"_id": ObjectId(g.user['_id'])},
             {"$set": {"password": generate_password_hash(new_password)}}
         )
-        return make_response(True, "비밀번호가 성공적으로 변경되었습니다.")
+        return make_json_response(True, "비밀번호가 성공적으로 변경되었습니다.")
 
     return render_template('mypage/modify_password.html')
 

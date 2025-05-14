@@ -140,41 +140,52 @@ def verify_otp():
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        db = get_db()
-        error = None
-        user = db.users.find_one({'email': email}) 
+        try:
+            email = request.form['email']
+            password = request.form['password']
+            db = get_db()
+            error = None
+            user = db.users.find_one({'email': email}) 
+            
+            if user is None:
+                error = 'Incorrect email' 
+            elif not check_password_hash(user['password'], password):
+                error = "Incorrect password."
+                
+            if error is None:
+                access_token = create_access_token(
+                    identity=str(user['_id']),
+                    expires_delta=timedelta(minutes=30)
+                )
+                refresh_token = create_refresh_token(
+                    identity=str(user['_id']),
+                    expires_delta=timedelta(days=14)
+                )
+                
+                db.tokens.update_one(
+                    {'user_id': user['_id']},
+                    {'$set': {
+                        'token': refresh_token,
+                        'created_at': datetime.now(),
+                        'expired_at': datetime.now() + timedelta(days=14),
+                        'is_revoked': False
+                    }},
+                    upsert=True
+                )
+                
+                response = redirect(url_for('blog.index'))
+                response.set_cookie('access_token_cookie', access_token, httponly=True, secure=False)
+                response.set_cookie('refresh_token_cookie', refresh_token, httponly=True, secure=False)
+                
+                return response
+            
+            return render_template('auth/login.html', error=error)
         
-        if user is None:
-            error = 'Incorrect email' 
-        elif not check_password_hash(user['password'], password):
-            error = "Incorrect password."
-            
-        if error is None:
-            access_token = create_access_token(identity=str(user['_id']), expires_delta= timedelta(minutes=30))
-            refresh_token = create_refresh_token(identity=str(user['_id']), expires_delta = timedelta(days=14))
-            
-            db.tokens.update_one(
-                {'user_id' : user['_id']},
-                {'$set':{
-                    'token': refresh_token,
-                    'created_at' : datetime.now(),
-                    'expired_at' : datetime.now() + timedelta(days=14),
-                    'is_revoked' : False
-                }},
-                upsert=True
-            )
-            response = redirect(url_for('blog.index'))
-            response.set_cookie('access_token_cookie', access_token, httponly=True, secure=False)
-            response.set_cookie('refresh_token_cookie', refresh_token, httponly=True, secure=False)
-            
-            return response
-            
         except Exception as e:
-            return make_response(False, f"서버 오류가 발생했습니다: {str(e)}")
-        
+            return make_response(f"서버 오류가 발생했습니다: {str(e)}", 500)
+
     return render_template('auth/login.html')
+
 
 @bp.route('/recover', methods=('GET', 'POST'))
 def recover():
