@@ -168,9 +168,11 @@ def login():
             response = redirect(url_for('blog.index'))
             response.set_cookie('access_token_cookie', access_token, httponly=True, secure=False)
             response.set_cookie('refresh_token_cookie', refresh_token, httponly=True, secure=False)
+            
             return response
-        
-        flash(error)
+            
+        except Exception as e:
+            return make_response(False, f"서버 오류가 발생했습니다: {str(e)}")
         
     return render_template('auth/login.html')
 
@@ -228,6 +230,6 @@ def logout():
     return response, 200
 
 @bp.route('/mypage', methods=('GET', 'POST'))
-@login_required
+# @login_required
 def mypage():
     return render_template('mypage/mypage.html')

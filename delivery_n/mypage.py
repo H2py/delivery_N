@@ -2,16 +2,17 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 import datetime
 from flask_jwt_extended import jwt_required
 from werkzeug.exceptions import abort
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from .auth import login_required
 from .db import get_db
+from werkzeug.security import generate_password_hash, 
 from bson.objectid import ObjectId
 from .utils import make_json_response
 
 bp = Blueprint('mypage', __name__, url_prefix='/mypage')
 
 @bp.route('/modify_name', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def modify_name():
     db = get_db()
     if request.method == 'POST':
@@ -38,13 +39,39 @@ def modify_name():
 
 
 @bp.route('/modify_password', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def modify_password():
-    return redirect(url_for('auth.recover'))
+    db = get_db()
+
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        user = db.users.find_one({'_id': ObjectId(g.user['_id'])})
+
+        if not current_password or not check_password_hash(user['password'], current_password):
+            return make_response(False, "현재 비밀번호가 일치하지 않습니다.")
+        if not new_password or not confirm_password:
+            return make_response(False, "새 비밀번호와 확인칸 모두 입력해주세요.")
+        if new_password != confirm_password:
+            return make_response(False, "새 비밀번호가 일치하지 않습니다.")
+        if len(new_password) < 5:
+            return make_response(False, "새 비밀번호는 5자 이상이어야 합니다.")
+        if check_password_hash(user['password'], new_password):
+            return make_response(False, "기존 비밀번호와 다른 비밀번호를 입력해주세요.")
+     
+        db.users.update_one(
+            {"_id": ObjectId(g.user['_id'])},
+            {"$set": {"password": generate_password_hash(new_password)}}
+        )
+        return make_response(True, "비밀번호가 성공적으로 변경되었습니다.")
+
+    return render_template('mypage/modify_password.html')
 
 
 @bp.route('/my_posts', methods=['GET'])
-@login_required
+# @login_required
 def my_posts():
     db = get_db()
     posts_cursor = db.posts.find(

@@ -10,88 +10,51 @@
 <!-- 컨텐츠 포함 -->
 {% block content %}
 <div class="container h-[calc(100vh-160px)] py-2 flex flex-col">
+
   <!-- 스크롤 가능한 리스트 영역 -->
   <div class="flex-1 overflow-y-auto">
     <ul class="space-y-4 font-notokr">
-      <li
-        class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200"
-      >
-        <div class="flex flex-col space-y-3">
-          <!-- 제목 및 가게명 -->
-          <div class="flex items-end gap-4 border-b border-gray-200">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800">
-              마라탕 드실분?
-            </h2>
-            <p class="text-sm sm:text-base text-gray-600">가게명 : 마라쿵푸</p>
-            <p>작성자 : 홍길동</p>
-          </div>
+        {% if posts %}
+            {% for post in posts %}
+            <li class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200"
+                data-deadline="{{ post.deadline.isoformat() if post.deadline else '' }}"
+                data-post-id="{{ post.id }}">
+              <div class="flex flex-col space-y-3">
+                <!-- 제목 및 가게명 -->
+                <div class="flex items-end gap-4 border-b border-gray-200">
+                  <h2 class="text-lg sm:text-xl font-bold text-gray-800">{{ post.title }}</h2>
+                  <p class="text-sm sm:text-base text-gray-600">가게명 : {{ post.store_name }}</p>
+                  <p class="text-gray-600">작성자 : {{ post.username }}</p>
+                </div>
 
-          <!-- 메뉴 -->
-          <div class="text-sm">
-            <span class="text-gray-600">메뉴 :</span>
-            <ul class="inline-flex gap-2">
-              <li class="text-main">마라탕</li>
-              <li class="text-main">마라샹궈</li>
-            </ul>
-          </div>
+                <!-- 메뉴 -->
+                <div class="text-sm">
+                  <span class="text-gray-600">메뉴 :</span>
+                  <ul class="inline-flex gap-2">
+                    {% for menu in post.menus %}
+                      <li class="text-main">{{ menu }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
 
-          <!-- 배달 정보 -->
-          <div class="flex items-end justify-between border-gray-200">
-            <div class="text-sm text-gray-600 mb-2">
-              마감시간 : 5월 7일 17:00
-            </div>
-            <div class="flex flex-col">
-              <span class="text-sm text-main font-medium">2명 참여중</span>
-              <p class="text-sm text-gray-600">1/4 당 4,000원 (3/4)</p>
-            </div>
-          </div>
-        </div>
-      </li>
-
-      <!-- 마감된 ui -->
-      <li
-        class="bg-gray-100 rounded-lg shadow-sm p-4 border-2 border-gray-200 relative overflow-hidden cursor-default select-none"
-      >
-        <!-- 마감 표시 배지 -->
-        <div
-          class="absolute top-0 right-0 bg-gray-600 text-white px-4 py-1 rounded-bl-lg text-sm font-medium"
-        >
-          마감됨
-        </div>
-
-        <div class="flex flex-col space-y-3 opacity-50">
-          <!-- 제목 및 가게명 -->
-          <div class="flex items-end gap-4 border-b border-gray-300">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-700">
-              마라탕 드실분?
-            </h2>
-            <p class="text-sm sm:text-base text-gray-600">가게명 : 마라쿵푸</p>
-            <p class="text-gray-600">작성자 : 홍길동</p>
-          </div>
-
-          <!-- 메뉴 -->
-          <div class="text-sm">
-            <span class="text-gray-600">메뉴 :</span>
-            <ul class="inline-flex gap-2">
-              <li class="text-gray-600">마라탕</li>
-              <li class="text-gray-600">마라샹궈</li>
-            </ul>
-          </div>
-
-          <!-- 배달 정보 -->
-          <div class="flex items-end justify-between border-gray-300">
-            <div class="text-sm text-gray-600 mb-2">
-              마감시간 : 5월 7일 17:00
-            </div>
-            <div class="flex flex-col">
-              <span class="text-sm text-gray-600 font-medium">4명 참여중</span>
-              <p class="text-sm text-gray-600 font-medium">
-                1/4 당 4,000원 (4/4)
-              </p>
-            </div>
-          </div>
-        </div>
-      </li>
+                <!-- 배달 정보 -->
+                <div class="flex items-end justify-between border-gray-200">
+                  <div class="text-sm text-gray-600 mb-2">
+                    마감시간 : {{ post.deadline.strftime('%m월 %d일 %H:%M') }}
+                  </div>
+                  <div class="flex flex-col items-end">
+                    <span class="text-sm text-main font-medium">{{ post.total_portion }}명 참여중</span>
+                    <p class="text-sm text-gray-600">1인당 {{ '{:,}'.format(post.total_price // post.total_portion) }}원 ({{ post.my_portion }}/{{ post.total_portion }})</p>
+                  </div>
+                </div>
+              </div>
+            </li>
+            {% endfor %}
+        {% else %}
+            <li class="text-center py-8 text-gray-500">
+                등록된 게시글이 없습니다.
+            </li>
+        {% endif %}
     </ul>
   </div>
 

@@ -20,7 +20,7 @@
     </div>
 
     <!-- 폼 영역 -->
-    <form class="space-y-6">
+    <form id="loginForm" class="space-y-6">
       <div class="space-y-4 font-notokr font-medium">
         <div>
           <label for="email" class="block text-lg sm:text-xl text-gray mb-2"
@@ -76,4 +76,62 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 로그인 상태 확인 함수
+const checkLoginStatus = async () => {
+  try {
+    const response = await fetch('/api/protected', {
+      method: 'GET',
+      credentials: 'include', // 쿠키를 포함하여 요청
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('로그인 상태 확인 중 오류:', error);
+    return false;
+  }
+};
+
+// 페이지 로드시 로그인 상태 확인
+document.addEventListener('DOMContentLoaded', async () => {
+  const isLoggedIn = await checkLoginStatus();
+  if (isLoggedIn) {
+    window.location.href = '/'; // 이미 로그인된 경우 메인 페이지로 리다이렉트
+  }
+});
+
+// 로그인 폼 제출 처리
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  try {
+    const response = await fetch('/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      alert(data.message);
+      window.location.href = '/';
+    } else {
+      alert(data.message);
+    }
+  } catch (error) {
+    console.error('로그인 중 오류:', error);
+    alert('로그인 처리 중 오류가 발생했습니다.');
+  }
+});
+</script>
 {% endblock %}
