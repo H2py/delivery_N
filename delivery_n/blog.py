@@ -4,6 +4,9 @@ from werkzeug.exceptions import abort
 from .auth import login_required
 from .db import get_db
 from bson.objectid import ObjectId
+from flask import current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from .utils import make_response
 
 bp = Blueprint('blog', __name__)
 
@@ -65,21 +68,28 @@ def index():
 
 
 @bp.route('/create', methods=('GET', 'POST'))
-# @login_required
+@jwt_required()
 def create():
     if request.method == 'POST':
         try:
             data = request.get_json()
             
+            # JWT에서 user_id 가져오기
+            author_id = get_jwt_identity()
+            print("DEBUG - Author ID from JWT:", author_id)  # 디버깅용 출력
+            
+            if not author_id:
+                return jsonify({
+                    'success': False,
+                    'message': '사용자 인증에 실패했습니다.',
+                    'result': {}
+                }), 401
+
             # 필수 필드 검증
             required_fields = ['title', 'store_name', 'menus', 'content', 'total_price', 'my_portion', 'total_portion']
             for field in required_fields:
                 if not data.get(field):
-                    return jsonify({
-                        'success': False,
-                        'message': f'{field} is required.',
-                        'result': {}
-                    }), 400
+                    return make_response(False, f'{field} is required.') , 400
 
             # 현재 시간
             current_time = datetime.now()
@@ -90,7 +100,7 @@ def create():
                 'store_name': data['store_name'],
                 'menus': data['menus'],
                 'content': data['content'],
-                'author_id': ObjectId(data['author_id']),  # 프론트엔드에서 전달받은 author_id 사용
+                'author_id': ObjectId(author_id),  # JWT에서 가져온 user_id 사용
                 'total_price': data['total_price'],
                 'my_portion': data['my_portion'],
                 'total_portion': data['total_portion'],
@@ -105,26 +115,14 @@ def create():
             result = db.posts.insert_one(post_data)
             
             if result.inserted_id:
-                return jsonify({
-                    'success': True,
-                    'message': '게시글 생성에 성공했습니다.',
-                    'result': {
-                        'redirect_url': '/'
-                    }
-                })
+                return make_response(True, '게시글 생성에 성공했습니다.', {
+                    'redirect_url': '/'
+                }), 200
             else:
-                return jsonify({
-                    'success': False,
-                    'message': '게시글 생성에 실패했습니다.',
-                    'result': {}
-                }), 500
+                return make_response(False, '게시글 생성에 실패했습니다.', {}), 500
                 
         except Exception as e:
-            return jsonify({
-                'success': False,
-                'message': str(e),
-                'result': {}
-            }), 500
+            return make_response(False, str(e), {}), 500
             
     return render_template('blog/create.html')
                 

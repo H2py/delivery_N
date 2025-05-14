@@ -134,14 +134,14 @@ def login():
             elif not check_password_hash(user['password'], password):
                 return make_response(False, "비밀번호가 일치하지 않습니다.")
                 
-            access_token = create_access_token(identity=str(user['_id']))
+            access_token_cookie = create_access_token(identity=str(user['_id']))
             response = make_response(True, "로그인에 성공했습니다.", {
                 'username': user['username'],
                 'email': user['email']
             })
             response.set_cookie(
-                'access_token',
-                access_token,
+                'access_token_cookie',
+                access_token_cookie,
                 httponly=True,
                 secure=False,
                 samesite='Strict',
@@ -192,7 +192,7 @@ def load_logged_in_user():
 @bp.route('/logout')
 def logout():
     response = redirect(url_for('auth.login'))
-    response.delete_cookie('access_token')
+    response.delete_cookie('access_token_cookie')
     return response
 
 @bp.route('/mypage', methods=('GET', 'POST'))
