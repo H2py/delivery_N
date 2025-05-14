@@ -97,7 +97,8 @@ def create():
                 'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
                 'status': '모집중',
                 'created_at': current_time,
-                'updated_at': current_time
+                'updated_at': current_time,
+                'participants': []
             }
             
             # 데이터베이스에 저장
@@ -167,7 +168,7 @@ def get_post(id, check_author=True):
     
     
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
-@login_required
+# @login_required
 def update(id):
     post = get_post(id)
     
@@ -195,7 +196,7 @@ def update(id):
 
 
 @bp.route('/<int:id>/delete', methods=('POST',))
-@login_required
+# @login_required
 def delete(id):
     get_post(id)
     db = get_db()

@@ -196,6 +196,6 @@ def logout():
     return response
 
 @bp.route('/mypage', methods=('GET', 'POST'))
-@login_required
+# @login_required
 def mypage():
     return render_template('mypage/mypage.html')
