@@ -20,31 +20,52 @@ def index():
             }
         },
         {
-            "$unwind": "$author"
+            "$set": {
+                "author": {
+                    "$cond": {
+                        "if": { "$gt": [{ "$size": "$author" }, 0] },
+                        "then": { "$arrayElemAt": ["$author", 0] },
+                        "else": { "username": "알 수 없음" }
+                    }
+                }
+            }
         },
         {
             "$project": {
                 "id": "$_id",
                 "title": 1,
-                "body": 1,
-                "created": 1,
+                "content": 1,
                 "author_id": 1,
-                "username": "$author.username"
+                "username": "$author.username",
+                "store_name": 1,
+                "menus": 1,
+                "total_price": 1,
+                "my_portion": 1,
+                "total_portion": 1,
+                "deadline": 1,
+                "status": 1,
+                "created_at": 1,
+                "updated_at": 1
             }
         },
         {
-            "$sort": {"created": -1}
+            "$sort": {"created_at": -1}
         }
     ])
     posts_list = list(posts)
-    # return render_template('blog/index.html', posts=posts_list)
+    print("DEBUG: Posts data:", posts_list)
+    
+    if not posts_list:
+        print("DEBUG: No posts found in database")
+        posts_list = []
+
     return render_template('main.html', posts=posts_list)
 
 
 
 
 @bp.route('/create', methods=('GET', 'POST'))
-@login_required
+# @login_required
 def create():
     if request.method == 'POST':
         try:
