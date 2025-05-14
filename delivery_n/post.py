@@ -166,12 +166,12 @@ def get_post(post_id, check_author=True):
         abort(403)
     return post
 
+
 #게시글 수정
 @bp.route('/<post_id>/update', methods=['GET', 'POST'])
 @login_required
 def update(post_id):
     post = get_post(post_id)
-
     if request.method == 'POST':
         title = request.form['title']
         content = request.form['content']
