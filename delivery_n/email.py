@@ -5,13 +5,13 @@ from instance.config import MAIL_USERNAME
 from . import mail
 
 
-def send_mail(cert_info, otp):
+def send_mail(cert_info, title, content):
     msg = Message(
-        '[배달N빵] 이메일 인증 번호',
+        title,
         sender=MAIL_USERNAME,
         recipients=[cert_info]
     )
-    msg.body = f'안녕하세요. 배달N빵입니다.\n인증 번호를 입력하여 이메일 인증을 완료해 주세요.\n인증 번호: {otp}'
+    msg.body = content
     try:
         mail.send(msg)
         return True
