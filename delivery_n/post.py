@@ -40,12 +40,14 @@ def index():
     return render_template('blog/index.html', posts=posts_list)
 
 
-@bp.route('/create', methods=['GET', 'POST'])
-# @login_required
+@bp.route('/create', methods=('GET', 'POST'))
+@login_required
 def create():
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
+        url = request.form.get('url') 
+
         db = get_db()
         error = None
 
@@ -55,10 +57,10 @@ def create():
         if error is not None:
             flash(error)
         else:
-            db = get_db()
             db.posts.insert_one({
                 'title': title,
                 'body': body,
+                'url': url,  # ← DB에 url 저장 추가
                 'created': datetime.now(),
                 'author_id': ObjectId(g.user['_id'])
             })
@@ -104,7 +106,7 @@ def get_post(id, check_author=True):
     
     
 @bp.route('/<int:id>/update', methods=['GET', 'POST'])
-# @login_required
+@login_required
 def update(id):
     post = get_post(id)
     
