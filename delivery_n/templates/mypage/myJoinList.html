@@ -23,43 +23,27 @@
    <div class="w-[120px]"></div>
 
    <!-- 페이지네이션 -->
-   <div class="flex justify-center items-center space-x-2">
-     <button
-       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
-     >
-       이전
-     </button>
-     <button
-       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
-     >
-       1
-     </button>
-     <button
-       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
-     >
-       2
-     </button>
-     <button
-       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
-     >
-       3
-     </button>
-     <button
-       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
-     >
-       4
-     </button>
-     <button
-       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
-     >
-       5
-     </button>
-     <button
-       class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
-     >
-       다음
-     </button>
-   </div>
+   <div class="flex justify-center items-center space-x-2 mt-4">
+    {# 이전 #}
+    <a href="{{ url_for('mypage.my_join', page=page-1) }}"
+       class="px-3 py-1 border rounded {{ 'opacity-50 pointer-events-none' if page<=1 else '' }}">
+      이전
+    </a>
+  
+    {# 동적 페이지 번호 #}
+    {% for p in range(start_page, end_page+1) %}
+      <a href="{{ url_for('mypage.my_join', page=p) }}"
+         class="px-3 py-1 border rounded {{ 'bg-main text-white' if p == page else '' }}">
+        {{ p }}
+      </a>
+    {% endfor %}
+  
+    {# 다음 #}
+    <a href="{{ url_for('mypage.my_join', page=page+1) }}"
+       class="px-3 py-1 border rounded {{ 'opacity-50 pointer-events-none' if page>=total_pages else '' }}">
+      다음
+    </a>
+  </div>
 
    <!-- 글쓰기 버튼 -->
    <div class="w-[120px] flex justify-end">
