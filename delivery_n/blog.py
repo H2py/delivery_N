@@ -44,7 +44,7 @@ def index():
 
 
 @bp.route('/create', methods=('GET', 'POST'))
-@login_required
+# @login_required
 def create():
     if request.method == 'POST':
         try:
@@ -146,7 +146,7 @@ def get_post(id, check_author=True):
     
     
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
-@login_required
+# @login_required
 def update(id):
     post = get_post(id)
     
@@ -174,7 +174,7 @@ def update(id):
 
 
 @bp.route('/<int:id>/delete', methods=('POST',))
-@login_required
+# @login_required
 def delete(id):
     get_post(id)
     db = get_db()
