@@ -14,7 +14,7 @@
         </div>
 
         <!-- 폼 영역 -->
-        <form method="post" class="space-y-6">
+        <form id="recoverForm" class="space-y-6">
             <div class="space-y-4 font-notokr font-medium">
                 <div>
                     <label for="email" class="block text-lg sm:text-xl text-gray mb-2">이메일</label>
@@ -32,9 +32,10 @@
             <!-- 비밀번호 재설정 버튼 -->
             <button 
                 type="submit" 
+                id="submitBtn"
                 class="w-full py-3 sm:py-4 text-xl sm:text-2xl border-2 border-transparent text-white bg-main rounded-lg hover:bg-white hover:text-main hover:border-2 hover:border-main transition-colors duration-200"
             >
-                비밀번호 재설정 링크 보내기
+                새 비밀번호 전송하기
             </button>
         </form>
 
@@ -44,4 +45,44 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('recoverForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // 버튼 비활성화
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-50');
+    
+    try {
+        const response = await fetch("{{ url_for('auth.recover') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        
+        if (data.success) {
+            alert(data.message);
+            window.location.href = "{{ url_for('auth.login') }}";
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+        // 버튼 활성화
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50');
+    }
+});
+</script>
 {% endblock %}

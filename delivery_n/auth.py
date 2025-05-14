@@ -123,7 +123,10 @@ def send_otp():
         'verified': False
     })
 
-    if send_mail(email, otp):
+    if send_mail(
+        email, 
+        '[배달N빵] 이메일 인증 번호', 
+        f'인증 번호를 입력하여 이메일 인증을 완료해 주세요.\n인증 번호: {otp}'):
         return make_json_response(True, "인증 코드가 전송되었습니다.")
     else:
         return make_json_response(False, "이메일 전송에 실패했습니다.")
@@ -214,23 +217,47 @@ def login():
 @bp.route('/recover', methods=['GET', 'POST'])
 def recover():
     if request.method == 'POST':
-        email = request.form['email']
-        db = get_db()
-        otp = str(random.randint(100000, 999999)) 
-        error = None
-        
-        user = db.users.find_one({'email': email})
-        if user is None:
-            error = '등록된 이메일이 없습니다.'
-        
-        if error is None:
-            if send_mail(email, otp):
-                flash('비밀번호 재설정 링크를 이메일로 보냈습니다.')
-            else:
-                flash('이메일 전송에 실패했습니다. 다시 시도해주세요/')
-            return redirect(url_for('auth.login'))
-        
-        flash(error)
+        try:
+            data = request.get_json()
+            email = data.get('email')
+            
+            if not email:
+                return make_json_response(False, "이메일을 입력해주세요.")
+            
+            db = get_db()
+            user = db.users.find_one({'email': email, 'deleted_at': {'$ne': True}})
+            
+            if user is None:
+                return make_json_response(False, "등록되지 않은 이메일입니다.")
+            
+            # 6자리 랜덤 숫자 생성
+            new_password = str(random.randint(100000, 999999))
+            
+            # 이메일 전송
+            email_content = f"""
+                안녕하세요, 배달N빵입니다.
+                요청하신 새로운 비밀번호입니다: {new_password}
+
+                보안을 위해 로그인 후 비밀번호를 변경해주세요.
+            """
+            if not send_mail(
+                email, 
+                '[배달N빵] 임시 비밀번호 안내', 
+                email_content):
+                return make_json_response(False, "이메일 전송에 실패했습니다. 잠시 후 다시 시도해주세요.")
+            
+            # 새 비밀번호 암호화 및 DB 업데이트
+            hashed_password = generate_password_hash(new_password)
+            db.users.update_one(
+                {'_id': user['_id']},
+                {'$set': {'password': hashed_password}}
+            )
+            
+            return make_json_response(True, "새로운 비밀번호가 이메일로 전송되었습니다.")
+            
+        except Exception as e:
+            print(f"비밀번호 재설정 중 오류 발생: {str(e)}")
+            return make_json_response(False, "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
     
     return render_template('auth/recover.html')
 
