@@ -1,6 +1,8 @@
 from datetime import datetime
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for, jsonify
 from werkzeug.exceptions import abort
+
+from delivery_n.utils import make_json_response
 from .auth import login_required
 from .db import get_db
 from bson.objectid import ObjectId
@@ -56,16 +58,8 @@ def index():
         }
     ])
     posts_list = list(posts)
-    print("DEBUG: Posts data:", posts_list)
-    
-    if not posts_list:
-        print("DEBUG: No posts found in database")
-        posts_list = []
 
     return render_template('main.html', posts=posts_list)
-
-
-
 
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
@@ -86,39 +80,49 @@ def create():
             # 현재 시간
             current_time = datetime.now()
             
-            # 데이터베이스에 저장할 문서 생성
             post_data = {
                 'title': data['title'],
                 'store_name': data['store_name'],
                 'menus': data['menus'],
                 'content': data['content'],
-                'author_id': ObjectId(author_id),  # JWT에서 가져온 user_id 사용
+                'author_id': ObjectId(g.user['_id']),
                 'total_price': data['total_price'],
                 'my_portion': data['my_portion'],
                 'total_portion': data['total_portion'],
                 'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
-                'status': '모집중',
+                'status': True,
                 'created_at': current_time,
-                'updated_at': current_time
+                'updated_at': current_time,
+                'participants': []
             }
             
-            # 데이터베이스에 저장
             db = get_db()
             result = db.posts.insert_one(post_data)
-            
             if result.inserted_id:
-                return make_response(True, '게시글 생성에 성공했습니다.', {
-                    'redirect_url': '/'
-                }), 200
+
+                return make_json_response(True, '게시글 생성에 성공했습니다.', {'post_id': str(result.inserted_id), 'redirect_url': '/'})
             else:
-                return make_response(False, '게시글 생성에 실패했습니다.', {}), 500
+                return make_json_response(False, '게시글 생성에 실패했습니다.', {}), 500
                 
+        except ValueError as e:
+            return make_json_response(False, f'잘못된 데이터 형식: {str(e)}', {}), 400
+        
         except Exception as e:
-            return make_response(False, str(e), {}), 500
+            return make_json_response(False, f'서버 오류: {str(e)}', {}), 500            
             
     return render_template('blog/create.html')
-                
-def get_post(id, check_author=True):
+
+# TODO : 전체 리스트 요청 
+# @bp.route('/posts', methods=('GET'))
+# @login_required
+# def get_post_list():
+#     db = get_db()
+#     try:
+        
+
+@bp.route('/posts/<id>', methods=('GET'))
+@login_required
+def get_post(id):
     db = get_db()
     try:
         post = db.posts.aggregate([
@@ -150,47 +154,73 @@ def get_post(id, check_author=True):
     except (StopIteration, ValueError):
         abort(404, f"Post id {id} doesn't exist.")
 
-    if check_author and post['author_id'] != ObjectId(g.user['_id']):
-        abort(403)
-
     return post
     
     
-@bp.route('/<int:id>/update', methods=('GET', 'POST'))
+@bp.route('/update/<id>', methods=('GET', 'POST'))
 @login_required
-def update(id):
+def update(id, check_author=True):
+
     post = get_post(id)
     
     if request.method == 'POST':
-        title = request.form['title']
-        body = request.form['body']
-        error = None
+        data = request.get_json()  # JSON 데이터로 변경
+        required_fields = ['title', 'store_name', 'menus', 'content', 'total_price', 'my_portion', 'total_portion', 'deadline']
+        for field in required_fields:
+            if not data.get(field):
+                return make_json_response(False, f'{field} is required.', {}), 400
+            
+            try:
+                updated_data = {
+                    'title': data['title'],
+                    'store_name': data['store_name'],
+                    'menus': data['menus'],
+                    'content': data['content'],
+                    'total_price': data['total_price'],
+                    'my_portion': data['my_portion'],
+                    'total_portion': data['total_portion'],
+                    'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
+                    'updated_at': datetime.now()
+                }
+                
+                db = get_db()
+                result = db.posts.update_one(
+                    {'_id': ObjectId(id), 'author_id': ObjectId(g.user['_id'])},
+                    {'$set': updated_data}
+                )
+                
+                if result.modified_count > 0:
+                    return make_json_response(True, '게시글 수정에 성공했습니다.', {'post_id': id, 'redirect_url': '/'})
+                else:
+                    return make_json_response(False, '게시글 수정에 실패했습니다.', {}), 400
+                    
+            except ValueError as e:
+                return make_json_response(False, f'잘못된 데이터 형식: {str(e)}', {}), 400
+            except Exception as e:
+                return make_json_response(False, f'서버 오류: {str(e)}', {}), 500
+        
+        return render_template('blog/update.html', post=post)
 
-    if not title:
-            error = 'Title is required.'
-
-    if error is not None:
-            flash(error)
-    else:
-        db = get_db()
-        db.posts.insert_one({
-            'title': title,
-            'body': body,
-            'created': datetime.now(),
-            'author_id': ObjectId(g.user['_id'])
-        })
-        return redirect(url_for('blog.index'))
-    return render_template('blog/update.html', post=post)
 
 
-
-@bp.route('/<int:id>/delete', methods=('POST',))
+@bp.route('/delete/<id>', methods=('POST'))
 @login_required
 def delete(id):
-    get_post(id)
-    db = get_db()
-    db.posts.insert_one({
-        'created': datetime.now(),
-        'author_id': ObjectId(g.user['_id'])
-    })
-    return redirect(url_for('blog.index'))
+    try:
+        get_post(id, check_author=True)
+        db = get_db()
+        result = db.posts.delete_one({'_id': ObjectId(id), 'author_id': ObjectId(g.user['_id'])})
+
+        if result.deleted_count > 0:
+            return make_json_response(True, '게시글 삭제에 성공했습니다.', {'redirect_url': '/'})
+        else:
+            return make_json_response(False, '게시글 삭제에 실패했습니다.', {}), 400
+            
+    except Exception as e:
+        return make_json_response(False, str(e), {}), 404
+
+@bp.route('/detail/<id>', methods=('GET', 'POST'))
+@login_required
+def detail(id):
+    post = get_post(id, check_author=False)    
+    return render_template('/blog/detail.html', post=post)
