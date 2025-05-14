@@ -257,6 +257,7 @@ def get_post(id, check_author=True):
                     "updated_at": 1,
                     "participants": 1,
                     "author_id": 1,
+                    "url": 1,
                     "author_name": {"$ifNull": ["$author.username", "알 수 없음"]},
                     "remaining_portion": {
                         "$subtract": [
