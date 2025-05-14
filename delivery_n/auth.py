@@ -1,21 +1,27 @@
 import functools
-
-from flask import (Blueprint, flash, g, redirect, render_template, request, session,
-                   url_for)
+from flask import (Blueprint, flash, g, redirect, render_template, request, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from .db import get_db
-import sys
-
-print(sys.path)
+from flask_jwt_extended import create_access_token, get_jwt_identity
+from bson.objectid import ObjectId
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for('auth.login'))
+        return view(**kwargs)
+    return wrapped_view
 
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        email = request.form['email']
         db = get_db()
         error = None
         
@@ -23,19 +29,24 @@ def register():
             error = 'Username is required'
         elif not password:
             error = 'Password is required'    
-        
-        
+        elif not email:
+            error = 'Email is required'
+        elif db.users.find_one({'username': username}):
+            error = 'Username already exists'
+        elif db.users.find_one({'email': email}):
+            error = 'Email already exists'
+            
         if error is None:
             try:
                 db.users.insert_one({
                     'username': username,
+                    'email': email,
                     'password': generate_password_hash(password)
                 })
                 return redirect(url_for('auth.login'))
             except Exception as e:
                 error = f"Registration failed: {e}"
 
-        flash(error)
     return render_template('auth/register.html')
 
 
@@ -54,9 +65,11 @@ def login():
             error = "Incorrect password."
             
         if error is None:
-            session.clear()
-            session['user_id'] = str(user['_id'])
-            return redirect(url_for('index'))
+            access_token = create_access_token(identity=str(user['_id']))
+            response = redirect(url_for('blog.index'))
+            # secure=True로 설정하면 HTTPS에서만 쿠키가 전송됨
+            response.set_cookie('access_token', access_token, httponly=True, secure=False)
+            return response
         
         flash(error)
         
@@ -85,28 +98,29 @@ def recover():
 
 @bp.before_app_request
 def load_logged_in_user():
-    user_id = session.get('user_id')
+    token = request.cookies.get('access_token')
     
-    if user_id is None:
+    if not token:
         g.user = None
-    else:
-        from bson.objectid import ObjectId
-        db = get_db()
-        g.user = db.users.find_one({'_id': ObjectId(user_id)})
+        return
+    try:
+        user_id = get_jwt_identity()
+        if user_id:
+            db = get_db()
+            g.user = db.users.find_one({'_id': ObjectId(user_id)}) 
+        else:
+            g.user = None
+    except:
+        g.user = None
         
 @bp.route('/logout')
 def logout():
-    session.clear()
-    return redirect(url_for('index'))
+    response = redirect(url_for('auth.login'))
+    response.delete_cookie('access_token')
+    return response
+
 
 @bp.route('/mypage', methods=('GET', 'POST'))
+@login_required
 def mypage():
     return render_template('mypage/mypage.html')
-
-def login_required(view):
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
-        if g.user is None:
-            return redirect(url_for('auth.login'))
-        return view(**kwargs)
-    return wrapped_view
