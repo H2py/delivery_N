@@ -110,9 +110,9 @@
         <form id="joinForm" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                    참여 수량 (최대 {{ post.total_portion - post.my_portion }})
+                    참여 수량 (최대 {{ post.remaining_portion }})
                 </label>
-                <input type="number" id="portionInput" min="1" max="{{ post.total_portion - post.my_portion }}" value="1" 
+                <input type="number" id="portionInput" min="1" max="{{ post.remaining_portion }}" value="1" 
                        class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="text-right">
@@ -133,9 +133,7 @@
     </div>
     {% endif %}
 </div>
-{% endblock %}
 
-{% block script %}
 <script>
     // 서버에서 전달받은 데이터를 전역 변수로 설정
     const POST_DATA = {
@@ -143,7 +141,7 @@
         totalPrice: parseInt("{{ post.total_price }}") || 0,
         totalPortion: parseInt("{{ post.total_portion }}") || 1,
         myPortion: parseInt("{{ post.my_portion }}") || 0,
-        remainingPortion: parseInt("{{ post.total_portion - post.my_portion }}") || 1,
+        remainingPortion: parseInt("{{ post.remaining_portion }}") || 0,
         authorId: "{{ post.author_id }}"
     };
     
