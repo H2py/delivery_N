@@ -54,10 +54,11 @@
         <h2 class="text-xl font-bold mb-4">참여 현황</h2>
         <div class="space-y-4">
             {% for participant in post.participants %}
+            {% if participant.status != '거절' %}
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
                 <div>
                     <span class="font-semibold">{{ participant.username }}</span>
-                    <span class="text-gray-600 ml-2">{{ "{:,}".format(participant.amount) }}원 ({{ participant.portion }}/{{ post.total_portion }})</span>
+                    <span class="text-gray-600 ml-2">{{ "{:,}".format(participant.amount|int) }}원 ({{ participant.portion }}/{{ post.total_portion|int }})</span>
                     <span class="{% if participant.status == '확정' %}text-green-500{% else %}text-red-600{% endif %} font-semibold ml-2">
                         {{ participant.status }}
                     </span>
@@ -71,6 +72,7 @@
                 </div>
                 {% endif %}
             </div>
+            {% endif %}
             {% endfor %}
             
             <!-- 총 참여 현황 요약 -->
@@ -82,7 +84,7 @@
                     </div>
                     <div>
                         <p class="text-gray-600">현재 참여 인원</p>
-                        <p class="text-xl font-bold">{{ post.participants|length }}명</p>
+                        <p class="text-xl font-bold">{{ post.participants|selectattr('status', 'ne', '거절')|list|length }}명</p>
                     </div>
                     <div>
                         <p class="text-gray-600">총 모집 금액</p>
@@ -90,7 +92,7 @@
                     </div>
                     <div>
                         <p class="text-gray-600">현재 모집 금액</p>
-                        <p class="text-xl font-bold">{{ "{:,}".format(post.participants|sum(attribute='amount')|int) }}원</p>
+                        <p class="text-xl font-bold">{{ "{:,}".format(post.participants|selectattr('status', 'ne', '거절')|sum(attribute='amount')|int) }}원</p>
                     </div>
                 </div>
             </div>

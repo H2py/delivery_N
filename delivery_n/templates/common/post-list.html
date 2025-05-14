@@ -10,10 +10,15 @@
     <ul class="space-y-4 font-notokr">
       {% if posts %}
         {% for post in posts %}
-          <li onclick="location.href='/posts/{{ post.id }}'"
-              class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200 cursor-pointer"
+          <li onclick="handlePostClick(event, '/posts/{{ post.id }}')"
+              class="relative bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200 cursor-pointer post-item"
               data-deadline="{{ post.deadline.isoformat() if post.deadline else '' }}"
               data-post-id="{{ post.id }}">
+            <!-- 마감 뱃지 -->
+            <div class="absolute hidden expired-badge right-0 top-0 bg-gray-500 text-white px-3 py-1 rounded-tr-lg rounded-bl-lg">
+              마감됨
+            </div>
+            
             <div class="flex flex-col space-y-3">
                 <!-- 제목 및 가게명 -->
                 <div class="flex items-end gap-4 border-b border-gray-200">
@@ -34,16 +39,16 @@
 
                 <!-- 배달 정보 -->
                 <div class="flex items-end justify-between border-gray-200">
-                  <div class="text-sm text-gray-600 mb-2">
+                  <div class="text-sm text-gray-600 mb-2 deadline-text">
                     마감시간 : {{ post.deadline.strftime('%m월 %d일 %H:%M') }}
+                    <span class="remaining-time ml-2 text-main"></span>
                   </div>
                   <div class="flex flex-col items-end">
-                    <span class="text-sm text-main font-medium">{{ post.total_portion }}명 참여중</span>
+                    <span class="text-sm text-main font-medium">{{ post.current_participants }}명 참여중</span>
                     <p class="text-sm text-gray-600">1인당 {{ '{:,}'.format(post.total_price // post.total_portion) }}원 ({{ post.my_portion }}/{{ post.total_portion }})</p>
                   </div>
                 </div>
               </div>
-
           </li>
         {% endfor %}
       {% else %}
@@ -59,4 +64,83 @@
       {% endif %}
     </ul>
   </div>
+
+  <script>
+    function formatRemainingTime(milliseconds) {
+      if (milliseconds <= 0) return '';
+      
+      const seconds = Math.floor(milliseconds / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (days > 0) return `${days}일 남음`;
+      if (hours > 0) return `${hours}시간 남음`;
+      if (minutes > 0) return `${minutes}분 남음`;
+      return `${seconds}초 남음`;
+    }
+
+    function setPostExpiration(postElement) {
+      const deadline = new Date(postElement.dataset.deadline);
+      const now = new Date();
+      const remainingTime = deadline - now;
+      
+      const remainingTimeElement = postElement.querySelector('.remaining-time');
+      const expiredBadge = postElement.querySelector('.expired-badge');
+      const deadlineText = postElement.querySelector('.deadline-text');
+      
+      if (remainingTime <= 0) {
+        // 이미 마감된 경우
+        postElement.classList.add('opacity-50');
+        expiredBadge.classList.remove('hidden');
+        postElement.style.pointerEvents = 'none';
+        deadlineText.classList.add('text-red-500');
+        deadlineText.textContent = '마감시간 종료';
+        remainingTimeElement.textContent = '';
+      } else {
+        // 마감 전인 경우
+        remainingTimeElement.textContent = formatRemainingTime(remainingTime);
+        
+        // setTimeout으로 마감 시간에 UI 업데이트
+        setTimeout(() => {
+          postElement.classList.add('opacity-50');
+          expiredBadge.classList.remove('hidden');
+          postElement.style.pointerEvents = 'none';
+          deadlineText.classList.add('text-red-500');
+          deadlineText.textContent = '마감시간 종료';
+          remainingTimeElement.textContent = '';
+        }, remainingTime);
+        
+        // 남은 시간 표시 업데이트 (1초마다)
+        const updateInterval = setInterval(() => {
+          const newRemainingTime = deadline - new Date();
+          if (newRemainingTime <= 0) {
+            clearInterval(updateInterval);
+            remainingTimeElement.textContent = '';
+          } else {
+            remainingTimeElement.textContent = formatRemainingTime(newRemainingTime);
+          }
+        }, 1000);
+      }
+    }
+
+    function handlePostClick(event, url) {
+      const post = event.currentTarget;
+      const deadline = new Date(post.dataset.deadline);
+      const now = new Date();
+
+      if (deadline < now) {
+        event.preventDefault();
+        return;
+      }
+      
+      location.href = url;
+    }
+
+    // 페이지 로드 시 모든 게시물의 마감 상태 설정
+    document.addEventListener('DOMContentLoaded', () => {
+      const posts = document.querySelectorAll('.post-item');
+      posts.forEach(post => setPostExpiration(post));
+    });
+  </script>
 {% endmacro %}

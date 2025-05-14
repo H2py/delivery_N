@@ -29,7 +29,12 @@ def index():
     end_page = min(start_page + block_size - 1, total_pages)
     
     posts_cursor = db.posts.aggregate([
-        { "$sort": { "created_at": -1 } },
+        {
+            "$match": {
+                "deadline": { "$gt": datetime.now() }  # 현재 시간보다 마감시간이 더 큰 것만 필터링
+            }
+        },
+        { "$sort": { "deadline": 1 } },  # 마감시간 오름차순 정렬
         { "$skip": skip },
         { "$limit": per_page },
         {
@@ -41,6 +46,14 @@ def index():
             }
         },
         {
+            "$lookup": {
+                "from": "participants",
+                "localField": "_id",
+                "foreignField": "post_id",
+                "as": "participants"
+            }
+        },
+        {
             "$set": {
                 "author": {
                     "$cond": {
@@ -48,7 +61,8 @@ def index():
                         "then": { "$arrayElemAt": ["$author", 0] },
                         "else": { "username": "알 수 없음" }
                     }
-                }
+                },
+                "current_participants": { "$size": "$participants" }
             }
         },
         {
@@ -63,12 +77,13 @@ def index():
                 "total_price": 1,
                 "my_portion": 1,
                 "total_portion": 1,
+                "current_participants": 1,
                 "deadline": 1,
                 "status": 1,
                 "created_at": 1,
                 "updated_at": 1
             }
-        }#
+        }
     ])
 
     posts_list = list(posts_cursor)
@@ -108,7 +123,7 @@ def create():
                 'status': True,
                 'created_at': current_time,
                 'updated_at': current_time,
-                'url': data.get('url', '').strip()
+                'url': data['url']
             }
             
             db = get_db()
