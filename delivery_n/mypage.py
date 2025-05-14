@@ -33,11 +33,22 @@ def my_write():
             "$match": {"author_id": ObjectId(g.user['_id'])}
         },
         {
+            "$sort": { "deadline": 1 }
+        },
+        {
             "$lookup": {
                 "from": "users",
                 "localField": "author_id",
                 "foreignField": "_id",
                 "as": "author"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "participants",
+                "localField": "_id",
+                "foreignField": "post_id",
+                "as": "participants"
             }
         },
         {
@@ -48,7 +59,8 @@ def my_write():
                         "then": { "$arrayElemAt": ["$author", 0] },
                         "else": { "username": "알 수 없음" }
                     }
-                }
+                },
+                "current_participants": { "$size": "$participants" }
             }
         },
         {
@@ -63,6 +75,7 @@ def my_write():
                 "total_price": 1,
                 "my_portion": 1,
                 "total_portion": 1,
+                "current_participants": 1,
                 "deadline": 1,
                 "status": 1,
                 "created_at": 1,
@@ -85,15 +98,110 @@ def my_join():
     per_page = 10
     skip = (page - 1) * per_page
     
-    total_posts = db.posts.count_documents({})
-    total_pages = (total_posts + per_page - 1) // per_page 
+    # participants 컬렉션에서 사용자가 참여한 게시글 조회
+    pipeline = [
+        {
+            "$match": {
+                "user_id": ObjectId(g.user['_id'])
+            }
+        },
+        {
+            "$lookup": {
+                "from": "posts",
+                "localField": "post_id",
+                "foreignField": "_id",
+                "as": "post"
+            }
+        },
+        {
+            "$unwind": "$post"
+        },
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "post.author_id",
+                "foreignField": "_id",
+                "as": "author"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "participants",
+                "localField": "post._id",
+                "foreignField": "post_id",
+                "as": "all_participants"
+            }
+        },
+        {
+            "$set": {
+                "author": {
+                    "$cond": {
+                        "if": { "$gt": [{ "$size": "$author" }, 0] },
+                        "then": { "$arrayElemAt": ["$author", 0] },
+                        "else": { "username": "알 수 없음" }
+                    }
+                },
+                "current_participants": { "$size": "$all_participants" }
+            }
+        },
+        {
+            "$project": {
+                "id": "$post._id",
+                "title": "$post.title",
+                "content": "$post.content",
+                "author_id": "$post.author_id",
+                "username": "$author.username",
+                "store_name": "$post.store_name",
+                "menus": "$post.menus",
+                "total_price": "$post.total_price",
+                "my_portion": "$post.my_portion",
+                "total_portion": "$post.total_portion",
+                "deadline": "$post.deadline",
+                "status": "$post.status",
+                "created_at": "$post.created_at",
+                "updated_at": "$post.updated_at",
+                "participant_status": "$status",
+                "participant_portion": "$portion",
+                "participant_amount": "$amount",
+                "current_participants": 1
+            }
+        },
+        {
+            "$sort": { "deadline": 1 }
+        },
+        {
+            "$skip": skip
+        },
+        {
+            "$limit": per_page
+        }
+    ]
+    
+    # 전체 문서 수 계산을 위한 카운트 파이프라인
+    count_pipeline = [
+        {
+            "$match": {
+                "user_id": ObjectId(g.user['_id'])
+            }
+        }
+    ]
+    
+    total_posts = len(list(db.participants.aggregate(count_pipeline)))
+    total_pages = (total_posts + per_page - 1) // per_page
     
     block_size = 5
     block_index = (page - 1) // block_size
     start_page = block_index * block_size + 1
     end_page = min(start_page + block_size - 1, total_pages)
-    posts = db.posts.find({'participants': ObjectId(g.user['_id'])})
-    return render_template('mypage/myJoinList.html', posts=posts, page=page, total_pages=total_pages, start_page=start_page, end_page=end_page)
+    
+    posts = list(db.participants.aggregate(pipeline))
+    
+    return render_template('mypage/myJoinList.html', 
+                         posts=posts, 
+                         page=page, 
+                         total_pages=total_pages, 
+                         start_page=start_page, 
+                         end_page=end_page)
 
 
 @bp.route('/modify_name', methods=['GET', 'POST'])

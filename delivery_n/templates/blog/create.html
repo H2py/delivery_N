@@ -105,12 +105,63 @@
 </div>
 
 <script>
-
 document.addEventListener('DOMContentLoaded', function() {
     const menuInput = document.getElementById('menu-input');
     const menuTags = document.getElementById('menu-tags');
     const menusInput = document.getElementById('menus');
+    const timeSelect = document.getElementById('deadline-time');
+    const dateInput = document.getElementById('deadline-date');
+    const deadlineInput = document.getElementById('deadline');
     let menus = [];
+
+    // 현재 시간 이후의 시간만 반환하는 함수
+    function getAvailableHours() {
+        const now = new Date();
+        const selectedDate = dateInput.value;
+        
+        // 한국 시간 기준으로 오늘 날짜 구하기
+        const today = new Date().toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            timeZone: 'Asia/Seoul'
+        }).split('. ').join('-').replace('.', '');
+
+        const currentHour = now.getHours();
+        
+        if (selectedDate === today) {
+            // 현재 시간의 다음 시간부터 24시까지의 배열 반환
+            return Array.from(
+                { length: 24 - currentHour }, 
+                (_, i) => (currentHour + 1 + i).toString().padStart(2, '0') + ':00'
+            );
+        }
+        // 다른 날짜의 경우 00시부터 24시까지
+        return Array.from(
+            { length: 25 }, 
+            (_, i) => i.toString().padStart(2, '0') + ':00'
+        );
+    }
+
+    // 시간 선택 옵션 업데이트
+    function updateTimeOptions() {
+        timeSelect.innerHTML = '<option value="">시간 선택</option>';
+        const availableHours = getAvailableHours();
+        
+        availableHours.forEach(time => {
+            const option = document.createElement('option');
+            option.value = time;
+            option.textContent = time;
+            timeSelect.appendChild(option);
+        });
+
+        // 이전에 선택된 시간이 현재 유효하지 않다면 선택 초기화
+        if (!availableHours.includes(timeSelect.value)) {
+            timeSelect.value = '';
+        }
+        
+        updateDeadline();
+    }
 
     function updateMenus() {
         menusInput.value = JSON.stringify(menus);
@@ -146,36 +197,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 시간 선택 옵션 생성
-    const timeSelect = document.getElementById('deadline-time');
-    for (let i = 0; i <= 24; i++) {
-        const hour = i.toString().padStart(2, '0');
-        const option = document.createElement('option');
-        option.value = `${hour}:00`;
-        option.textContent = `${hour}:00`;
-        timeSelect.appendChild(option);
-    }
+    // 날짜 입력 최소값 설정
+    const now = new Date();
+    const today = now.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: 'Asia/Seoul'
+    }).split('. ').join('-').replace('.', '');
+    
+    dateInput.min = today;
+    dateInput.value = today; // 오늘 날짜로 초기화
 
-    // 날짜와 시간 선택시 hidden input 업데이트
-    const dateInput = document.getElementById('deadline-date');
-    const deadlineInput = document.getElementById('deadline');
+    // 날짜 변경 이벤트
+    dateInput.addEventListener('change', updateTimeOptions);
 
+    // deadline hidden input 업데이트
     function updateDeadline() {
         if (dateInput.value && timeSelect.value) {
             deadlineInput.value = `${dateInput.value}T${timeSelect.value}`;
         }
     }
 
-    dateInput.addEventListener('change', updateDeadline);
+    // 시간 선택 변경 이벤트
     timeSelect.addEventListener('change', updateDeadline);
 
-    // 오늘 날짜를 최소 날짜로 설정
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const formattedToday = `${yyyy}-${mm}-${dd}`;
-    dateInput.min = formattedToday;
+    // 초기 시간 옵션 설정
+    updateTimeOptions();
 
     // 데이터 전송
     document.querySelector('form').addEventListener('submit', function(e) {
@@ -204,7 +252,8 @@ document.addEventListener('DOMContentLoaded', function() {
             my_portion: myPortion,
             total_portion: totalPortion,
             total_price: totalPrice,
-            deadline: formData.get('deadline')
+            deadline: formData.get('deadline'),
+            url: formData.get('url')
         }
 
         fetch('/create', {
