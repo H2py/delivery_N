@@ -173,9 +173,10 @@ def login():
                     upsert=True
                 )
                 
-                response = redirect(url_for('blog.index'))
-                response.set_cookie('access_token_cookie', access_token, httponly=True, secure=False)
-                response.set_cookie('refresh_token_cookie', refresh_token, httponly=True, secure=False)
+                response = make_response(redirect(url_for('blog.index')))
+                set_access_cookies(response, access_token)
+                set_refresh_cookies(response, refresh_token)
+
                 
                 return response
             
