@@ -104,6 +104,12 @@
 </div>
 {% endblock %}
 
+{% block script %}
+<script>
+    console.log('{{ post }}');
+</script>
+{% endblock %}
+
 <!-- 푸터 포함 -->
 {% block footer %}
 {% include 'common/footer.html' %}

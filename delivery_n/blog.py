@@ -136,7 +136,7 @@ def create():
 
 @bp.route('/posts/<id>', methods=['GET'])
 @login_required
-def get_post(id):
+def get_post(id, check_author=True):
     db = get_db()
     try:
         # ObjectId 유효성 검사
@@ -192,49 +192,95 @@ def get_post(id):
         current_app.logger.error(f"Error fetching post {id}: {str(e)}")
         abort(404, f"Error fetching post: {str(e)}")
 
+
 @bp.route('/update/<id>', methods=['GET', 'POST'])
 @login_required
-def update(id, check_author=True):
+def update(id):
+    db = get_db()
 
-    post = get_post(id)
-    
+    post = db.posts.aggregate([
+        {
+            "$match": {"_id": ObjectId(id)}
+        },
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "author_id",
+                "foreignField": "_id",
+                "as": "author"
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$author",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        {
+            "$project": {
+                "id": "$_id",
+                "title": 1,
+                "content": 1,
+                "store_name": 1,
+                "menus": 1,
+                "total_price": 1,
+                "my_portion": 1,
+                "total_portion": 1,
+                "deadline": 1,
+                "status": 1,
+                "created_at": 1,
+                "participants": 1,
+                "author_id": 1,
+                "author_name": {"$ifNull": ["$author.username", "알 수 없음"]}
+            }
+        }
+    ]).try_next()
+
+    if post is None:
+        abort(404, f"Post id {id} doesn't exist.")
+
+    if post['author_id'] != ObjectId(g.user['_id']):
+        abort(403, "You don't have permission to edit this post.")
+
     if request.method == 'POST':
-        data = request.get_json()  # JSON 데이터로 변경
-        required_fields = ['title', 'store_name', 'menus', 'content', 'total_price', 'my_portion', 'total_portion', 'deadline']
-        for field in required_fields:
-            if not data.get(field):
-                return make_json_response(False, f'{field} is required.', {}), 400
+        try:
+            data = request.get_json()
             
-            try:
-                updated_data = {
-                    'title': data['title'],
-                    'store_name': data['store_name'],
-                    'menus': data['menus'],
-                    'content': data['content'],
-                    'total_price': data['total_price'],
-                    'my_portion': data['my_portion'],
-                    'total_portion': data['total_portion'],
-                    'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
-                    'updated_at': datetime.now()
-                }
-                
-                db = get_db()
-                result = db.posts.update_one(
-                    {'_id': ObjectId(id), 'author_id': ObjectId(g.user['_id'])},
-                    {'$set': updated_data}
-                )
-                
-                if result.modified_count > 0:
-                    return make_json_response(True, '게시글 수정에 성공했습니다.', {'post_id': id, 'redirect_url': '/'})
-                else:
-                    return make_json_response(False, '게시글 수정에 실패했습니다.', {}), 400
-                    
-            except ValueError as e:
-                return make_json_response(False, f'잘못된 데이터 형식: {str(e)}', {}), 400
-            except Exception as e:
-                return make_json_response(False, f'서버 오류: {str(e)}', {}), 500
-        
-        return render_template('blog/update.html', post=post)
+            # 필수 필드 검증
+            required_fields = ['title', 'store_name', 'menus', 'content', 'total_price', 'my_portion', 'total_portion', 'deadline']
+            for field in required_fields:
+                if not data.get(field):
+                    return make_json_response(False, f'{field} is required.', {}), 400
+
+            updated_data = {
+                'title': data['title'],
+                'store_name': data['store_name'],
+                'menus': data['menus'],
+                'content': data['content'],
+                'total_price': int(data['total_price']),
+                'my_portion': int(data['my_portion']),
+                'total_portion': int(data['total_portion']),
+                'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
+                'updated_at': datetime.now()
+            }
+
+            result = db.posts.update_one(
+                {'_id': ObjectId(id), 'author_id': ObjectId(g.user['_id'])},
+                {'$set': updated_data}
+            )
+
+            if result.modified_count > 0:
+                return make_json_response(True, '게시글이 성공적으로 수정되었습니다.', {'redirect_url': '/'})
+            else:
+                return make_json_response(False, '게시글 수정에 실패했습니다.', {}), 400
+
+        except ValueError as e:
+            return make_json_response(False, f'잘못된 데이터 형식: {str(e)}', {}), 400
+        except Exception as e:
+            current_app.logger.error(f"Error updating post {id}: {str(e)}")
+            return make_json_response(False, f'서버 오류가 발생했습니다.', {}), 500
+
+    return render_template('blog/update.html', post=post)
 
 
 
@@ -242,7 +288,8 @@ def update(id, check_author=True):
 @login_required
 def delete(id):
     try:
-        get_post(id, check_author=True)
+        # get_post(id, check_author=True)
+        
         db = get_db()
         result = db.posts.delete_one({'_id': ObjectId(id), 'author_id': ObjectId(g.user['_id'])})
 
