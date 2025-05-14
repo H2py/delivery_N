@@ -99,6 +99,10 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+@bp.route('/mypage', methods=('GET', 'POST'))
+def mypage():
+    return render_template('mypage/mypage.html')
+
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):

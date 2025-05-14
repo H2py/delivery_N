@@ -37,7 +37,10 @@ def index():
         }
     ])
     posts_list = list(posts)
-    return render_template('blog/index.html', posts=posts_list)
+    # return render_template('blog/index.html', posts=posts_list)
+    return render_template('main.html', posts=posts_list)
+
+
 
 
 @bp.route('/create', methods=('GET', 'POST'))

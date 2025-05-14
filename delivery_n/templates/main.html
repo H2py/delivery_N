@@ -5,113 +5,154 @@
 <!-- SEO 관련 헤더 태그 모음 끝 -->
 
 <!-- 헤더 포함 -->
-{% block header %}
-{% include 'common/header.html' %}
-{% endblock %}
+{% block header %} {% include 'common/header.html' %} {% endblock %}
 
 <!-- 컨텐츠 포함 -->
 {% block content %}
 <div class="container h-[calc(100vh-160px)] py-2 flex flex-col">
-    <!-- 스크롤 가능한 리스트 영역 -->
-    <div class="flex-1 overflow-y-auto">
-        <ul class="space-y-4 font-notokr">
-            <li class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200">
-                <div class="flex flex-col space-y-3">
-                    <!-- 제목 및 가게명 -->
-                    <div class="flex items-end gap-4 border-b border-gray-200">
-                        <h2 class="text-lg sm:text-xl font-bold text-gray-800">마라탕 드실분?</h2>
-                        <p class="text-sm sm:text-base text-gray-600">가게명 : 마라쿵푸</p>
-                        <p>작성자 : 홍길동</p>
-                    </div>
-                    
-                    <!-- 메뉴 -->
-                    <div class="text-sm">
-                        <span class="text-gray-600">메뉴 :</span>
-                        <ul class="inline-flex gap-2">
-                            <li class="text-main">마라탕</li>
-                            <li class="text-main">마라샹궈</li>
-                        </ul>
-                    </div>
-                    
-                    <!-- 배달 정보 -->
-                    <div class="flex items-end justify-between border-gray-200">
-                        <div class="text-sm text-gray-600 mb-2">
-                            마감시간 : 5월 7일 17:00
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-sm text-main font-medium">2명 참여중</span>
-                            <p class="text-sm text-gray-600">1/4 당 4,000원 (3/4)</p>
-                        </div>
-                    </div>
-                </div>
-            </li>
+  <!-- 스크롤 가능한 리스트 영역 -->
+  <div class="flex-1 overflow-y-auto">
+    <ul class="space-y-4 font-notokr">
+      <li
+        class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200"
+      >
+        <div class="flex flex-col space-y-3">
+          <!-- 제목 및 가게명 -->
+          <div class="flex items-end gap-4 border-b border-gray-200">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800">
+              마라탕 드실분?
+            </h2>
+            <p class="text-sm sm:text-base text-gray-600">가게명 : 마라쿵푸</p>
+            <p>작성자 : 홍길동</p>
+          </div>
 
-            <!-- 마감된 ui -->
-            <li class="bg-gray-100 rounded-lg shadow-sm p-4 border-2 border-gray-200 relative overflow-hidden cursor-default select-none">
-                <!-- 마감 표시 배지 -->
-                <div class="absolute top-0 right-0 bg-gray-600 text-white px-4 py-1 rounded-bl-lg text-sm font-medium">
-                    마감됨
-                </div>
-                
-                <div class="flex flex-col space-y-3 opacity-50">
-                    <!-- 제목 및 가게명 -->
-                    <div class="flex items-end gap-4 border-b border-gray-300">
-                        <h2 class="text-lg sm:text-xl font-bold text-gray-700">마라탕 드실분?</h2>
-                        <p class="text-sm sm:text-base text-gray-600">가게명 : 마라쿵푸</p>
-                        <p class="text-gray-600">작성자 : 홍길동</p>
-                    </div>
-                    
-                    <!-- 메뉴 -->
-                    <div class="text-sm">
-                        <span class="text-gray-600">메뉴 :</span>
-                        <ul class="inline-flex gap-2">
-                            <li class="text-gray-600">마라탕</li>
-                            <li class="text-gray-600">마라샹궈</li>
-                        </ul>
-                    </div>
-                    
-                    <!-- 배달 정보 -->
-                    <div class="flex items-end justify-between border-gray-300">
-                        <div class="text-sm text-gray-600 mb-2">
-                            마감시간 : 5월 7일 17:00
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-sm text-gray-600 font-medium">4명 참여중</span>
-                            <p class="text-sm text-gray-600 font-medium">1/4 당 4,000원 (4/4)</p>
-                        </div>
-                    </div>
-                </div>
-            </li>
-        </ul>
-    </div>
+          <!-- 메뉴 -->
+          <div class="text-sm">
+            <span class="text-gray-600">메뉴 :</span>
+            <ul class="inline-flex gap-2">
+              <li class="text-main">마라탕</li>
+              <li class="text-main">마라샹궈</li>
+            </ul>
+          </div>
 
-    <!-- 고정된 컨트롤 영역 -->
-    <div class="font-notokr flex justify-between items-center list-control bg-white px-4">
-        <!-- 왼쪽 여백을 위한 빈 div -->
-        <div class="w-[120px]"></div>
-        
-        <!-- 페이지네이션 -->
-        <div class="flex justify-center items-center space-x-2">
-            <button class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200">이전</button>
-            <button class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200">1</button>
-            <button class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200">2</button>
-            <button class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200">3</button>
-            <button class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200">4</button>
-            <button class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200">5</button>
-            <button class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200">다음</button>
+          <!-- 배달 정보 -->
+          <div class="flex items-end justify-between border-gray-200">
+            <div class="text-sm text-gray-600 mb-2">
+              마감시간 : 5월 7일 17:00
+            </div>
+            <div class="flex flex-col">
+              <span class="text-sm text-main font-medium">2명 참여중</span>
+              <p class="text-sm text-gray-600">1/4 당 4,000원 (3/4)</p>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <!-- 마감된 ui -->
+      <li
+        class="bg-gray-100 rounded-lg shadow-sm p-4 border-2 border-gray-200 relative overflow-hidden cursor-default select-none"
+      >
+        <!-- 마감 표시 배지 -->
+        <div
+          class="absolute top-0 right-0 bg-gray-600 text-white px-4 py-1 rounded-bl-lg text-sm font-medium"
+        >
+          마감됨
         </div>
 
-        <!-- 글쓰기 버튼 -->
-        <div class="w-[120px] flex justify-end">
-            <button class="px-6 py-2 text-base border-2 border-transparent text-white bg-main rounded-lg hover:bg-white hover:text-main hover:border-2 hover:border-main transition-colors duration-200">
-                글쓰기
-            </button>
+        <div class="flex flex-col space-y-3 opacity-50">
+          <!-- 제목 및 가게명 -->
+          <div class="flex items-end gap-4 border-b border-gray-300">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-700">
+              마라탕 드실분?
+            </h2>
+            <p class="text-sm sm:text-base text-gray-600">가게명 : 마라쿵푸</p>
+            <p class="text-gray-600">작성자 : 홍길동</p>
+          </div>
+
+          <!-- 메뉴 -->
+          <div class="text-sm">
+            <span class="text-gray-600">메뉴 :</span>
+            <ul class="inline-flex gap-2">
+              <li class="text-gray-600">마라탕</li>
+              <li class="text-gray-600">마라샹궈</li>
+            </ul>
+          </div>
+
+          <!-- 배달 정보 -->
+          <div class="flex items-end justify-between border-gray-300">
+            <div class="text-sm text-gray-600 mb-2">
+              마감시간 : 5월 7일 17:00
+            </div>
+            <div class="flex flex-col">
+              <span class="text-sm text-gray-600 font-medium">4명 참여중</span>
+              <p class="text-sm text-gray-600 font-medium">
+                1/4 당 4,000원 (4/4)
+              </p>
+            </div>
+          </div>
         </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 고정된 컨트롤 영역 -->
+  <div
+    class="font-notokr flex justify-between items-center list-control bg-white px-4"
+  >
+    <!-- 왼쪽 여백을 위한 빈 div -->
+    <div class="w-[120px]"></div>
+
+    <!-- 페이지네이션 -->
+    <div class="flex justify-center items-center space-x-2">
+      <button
+        class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+      >
+        이전
+      </button>
+      <button
+        class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+      >
+        1
+      </button>
+      <button
+        class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+      >
+        2
+      </button>
+      <button
+        class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+      >
+        3
+      </button>
+      <button
+        class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+      >
+        4
+      </button>
+      <button
+        class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+      >
+        5
+      </button>
+      <button
+        class="px-3 py-1 text-sm border-2 border-gray-800 text-gray-800 rounded hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+      >
+        다음
+      </button>
     </div>
+
+    <!-- 글쓰기 버튼 -->
+    <div class="w-[120px] flex justify-end">
+      <a
+        href="{{ url_for('blog.create') }}"
+        class="px-6 py-2 text-base border-2 border-transparent text-white bg-main rounded-lg hover:bg-white hover:text-main hover:border-2 hover:border-main transition-colors duration-200"
+      >
+        글쓰기
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 <!-- 푸터 포함 -->
-{% block footer %}
-{% include 'common/footer.html' %}
-{% endblock %}
+{% block footer %} {% include 'common/footer.html' %} {% endblock %}
