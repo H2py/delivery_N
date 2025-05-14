@@ -182,7 +182,7 @@ def login():
             return render_template('auth/login.html', error=error)
         
         except Exception as e:
-            return make_response(f"서버 오류가 발생했습니다: {str(e)}", 500)
+            return make_json_response(f"서버 오류가 발생했습니다: {str(e)}", 500)
 
     return render_template('auth/login.html')
 

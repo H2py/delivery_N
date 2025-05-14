@@ -8,7 +8,7 @@ from .db import get_db
 from bson.objectid import ObjectId
 from flask import current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from .utils import make_response
+from .utils import make_json_response
 
 bp = Blueprint('blog', __name__)
 
@@ -75,7 +75,7 @@ def create():
             required_fields = ['title', 'store_name', 'menus', 'content', 'total_price', 'my_portion', 'total_portion']
             for field in required_fields:
                 if not data.get(field):
-                    return make_response(False, f'{field} is required.') , 400
+                    return make_json_response(False, f'{field} is required.') , 400
 
             # 현재 시간
             current_time = datetime.now()
