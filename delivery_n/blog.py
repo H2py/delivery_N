@@ -68,8 +68,9 @@ def index():
                 "created_at": 1,
                 "updated_at": 1
             }
-        }
+        }#
     ])
+
     posts_list = list(posts_cursor)
 
     return render_template('main.html', posts=posts_list, page=page, total_pages=total_pages, start_page=start_page, end_page=end_page)
@@ -80,7 +81,7 @@ def index():
 def create():
     if request.method == 'POST':
         try:
-            data = request.get_json()
+            data = request.get_json() or {}
 
             # JWT에서 user_id 가져오기
             author_id = get_jwt_identity()
@@ -99,7 +100,7 @@ def create():
                 'store_name': data['store_name'],
                 'menus': data['menus'],
                 'content': data['content'],
-                'author_id': ObjectId(g.user['_id']),
+                'author_id': ObjectId(author_id),
                 'total_price': data['total_price'],
                 'my_portion': data['my_portion'],
                 'total_portion': data['total_portion'],
@@ -109,6 +110,10 @@ def create():
                 'updated_at': current_time,
                 'participants': []
             }
+            # URL 선택적 추가
+            url = data.get('url', '').strip()
+            if url:
+                post_data['url'] = url
             
             db = get_db()
             result = db.posts.insert_one(post_data)
