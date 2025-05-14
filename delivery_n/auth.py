@@ -1,5 +1,5 @@
 import functools
-from flask import (Blueprint, flash, g, redirect, render_template, request, url_for, jsonify)
+from flask import Blueprint, flash, g, redirect, render_template, request, url_for, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from .db import get_db
@@ -8,6 +8,7 @@ from bson.objectid import ObjectId
 from .email import send_mail
 import random
 from datetime import datetime, timedelta
+from .utils import make_response  
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -62,12 +63,12 @@ def send_otp():
     data = request.get_json()
     email = data.get('email')
     if not email:
-        return jsonify({'error': '이메일이 필요합니다.'}), 400
+        return make_response(False, "이메일이 필요합니다.")
     
     db = get_db()
     if db.users.find_one({'email': email}):
-        return jsonify({'error': '이미 가입된 이메일입니다.'}), 400
-    
+        return make_response(False, "이미 가입된 이메일입니다.")
+
     otp = str(random.randint(100000, 999999))
     expires_at = datetime.now() + timedelta(minutes=5)
     db.otp_tokens.delete_one({'email': email})
@@ -78,41 +79,39 @@ def send_otp():
         'expires_at': expires_at,
         'verified': False
     })
-    
+
     if send_mail(email, otp):
-        return jsonify({'message': '인증 코드가 전송되었습니다.'})
+        return make_response(True, "인증 코드가 전송되었습니다.")
     else:
-        return jsonify({'error': '이메일 전송에 실패했습니다.'}), 500
+        return make_response(False, "이메일 전송에 실패했습니다.", status_code=500)
 
 @bp.route('verify-otp', methods=['POST'])
 def verify_otp():
     data = request.get_json()
     email = data.get('email')
     otp = data.get('otp')
-    
+
     if not email or not otp:
-        return jsonify({'error': '이메일, 인증코드가 필요합니다'}), 400
-    
+        return make_response(False, "이메일, 인증코드가 필요합니다.")
+
     db = get_db()
     otp_record = db.otp_tokens.find_one({'email': email, 'verified': True})
-    
+
     if not otp_record:
-        return jsonify({'error': '인증코드가 존재하지 않습니다'}), 400
-    
+        return make_response(False, "인증코드가 존재하지 않습니다.")
+
     if datetime.now() > otp_record['expires_at']:
-        db.otp_tokens.delte_one({'email': email})
-        return jsonify({'error': '인증코드가 만료되었습니다.'}), 400
-    
+        db.otp_tokens.delete_one({'email': email})
+        return make_response(False, "인증코드가 만료되었습니다.")
+
     if otp != otp_record['otp']:
-        return jsonify({'error': '인증 코드가 일치하지 않습니다.'}), 400
-    
-    
+        return make_response(False, "인증 코드가 일치하지 않습니다.")
+
     db.otp_tokens.update_one(
         {'email': email},
         {'$set': {'verified': True}}
     )
-    return jsonify({'message': '인증이 완료되었습니다.'})        
-
+    return make_response(True, "인증이 완료되었습니다.")
 
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
@@ -131,7 +130,6 @@ def login():
         if error is None:
             access_token = create_access_token(identity=str(user['_id']))
             response = redirect(url_for('blog.index'))
-            # secure=True로 설정하면 HTTPS에서만 쿠키가 전송됨
             response.set_cookie('access_token', access_token, httponly=True, secure=False)
             return response
         
@@ -184,7 +182,6 @@ def logout():
     response = redirect(url_for('auth.login'))
     response.delete_cookie('access_token')
     return response
-
 
 @bp.route('/mypage', methods=('GET', 'POST'))
 @login_required
