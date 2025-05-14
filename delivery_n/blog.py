@@ -15,7 +15,23 @@ bp = Blueprint('blog', __name__)
 @bp.route('/')
 def index():
     db = get_db()
-    posts = db.posts.aggregate([
+    
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    skip = (page - 1) * per_page
+    
+    total_posts = db.posts.count_documents({})
+    total_pages = (total_posts + per_page - 1) // per_page 
+    
+    block_size = 5
+    block_index = (page - 1) // block_size
+    start_page = block_index * block_size + 1
+    end_page = min(start_page + block_size - 1, total_pages)
+    
+    posts_cursor = db.posts.aggregate([
+        { "$sort": { "created_at": -1 } },
+        { "$skip": skip },
+        { "$limit": per_page },
         {
             "$lookup": {
                 "from": "users",
@@ -52,14 +68,11 @@ def index():
                 "created_at": 1,
                 "updated_at": 1
             }
-        },
-        {
-            "$sort": {"created_at": -1}
         }
     ])
-    posts_list = list(posts)
+    posts_list = list(posts_cursor)
 
-    return render_template('main.html', posts=posts_list)
+    return render_template('main.html', posts=posts_list, page=page, total_pages=total_pages, start_page=start_page, end_page=end_page)
 
 
 @bp.route('/create', methods=['GET', 'POST'])

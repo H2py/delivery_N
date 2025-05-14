@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
+import math
 from bson import ObjectId
-from flask import Blueprint, make_response, request, url_for
+from flask import Blueprint, jsonify, make_response, request, url_for
 from werkzeug.security import check_password_hash
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt, jwt_required, get_jwt_identity, set_access_cookies, set_refresh_cookies
 from .db import get_db
@@ -53,3 +54,41 @@ def protected():
         return make_json_response(False, "User not found"), 404
     
     return make_json_response(True, "Login successful", {"username": user['username']})
+
+@bp.route('/posts', methods=['GET'])
+def get_posts():
+    page = request.args.get('page', default=1, type=int)
+    per_page = 10
+    db = get_db()
+
+    total = db.posts.count_documents({})
+    total_pages = math.ceil(total / per_page)
+
+    cursor = (db.posts
+                .find()
+                .sort('deadline', 1)
+                .skip((page - 1) * per_page)
+                .limit(per_page))
+
+    posts = []
+    for p in cursor:
+        posts.append({
+            'id': str(p['_id']),
+            'title': p['title'],
+            'store_name': p['store_name'],
+            'username': p['username'],
+            'menus': p.get('menus', []),
+            'deadline': p['deadline'].isoformat() if p.get('deadline') else None,
+            'total_portion': p.get('total_portion', 0),
+            'total_price': p.get('total_price', 0),
+            'my_portion': p.get('my_portion', 0),
+        })
+
+    return jsonify({
+        'posts': posts,
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'total_pages': total_pages,
+        # 필요하면 url_for('api.get_posts', page=page+1) 등도 같이 반환 가능
+    })
