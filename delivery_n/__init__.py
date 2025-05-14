@@ -1,8 +1,8 @@
 from flask import Flask, render_template, jsonify, request
 from pymongo import MongoClient
 import os
-
 from flask_jwt_extended import JWTManager
+pip install Flask-Mail
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -11,7 +11,7 @@ def create_app(test_config=None):
         MONGO_URI='mongodb://localhost:27017/delivery',
         JWT_SECRET_KEY=os.getenv('JWT_SECRET_KEY', 'dev')
     )
-    
+    mail = Mail(app)
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
     else:
@@ -30,7 +30,7 @@ def create_app(test_config=None):
     app.add_url_rule('/', endpoint="index")
     
     from . import api
-    app.add.register_blueprint(api.bp)
+    app.register_blueprint(api.bp)
     
     return app
         

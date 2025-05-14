@@ -5,7 +5,7 @@ from .db import get_db
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
-@bp.route('/login', method=['POST'])
+@bp.route('/login', methods=['POST'])
 def login():
     username = request.json.get('username', None)
     password = request.json.get('password', None)
