@@ -118,25 +118,39 @@ def verify_otp():
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
-
-        username = request.form['username']
-        password = request.form['password']
-        db = get_db()
-        error = None
-        user = db.users.find_one({'username': username}) 
-        
-        if user is None:
-            error = 'Incorrect username.' 
-        elif not check_password_hash(user['password'], password):
-            error = "Incorrect password."
+        try:
+            data = request.get_json()
+            email = data.get('email')
+            password = data.get('password')
             
-        if error is None:
+            if not email or not password:
+                return make_response(False, "아이디와 비밀번호를 모두 입력해주세요.")
+            
+            db = get_db()
+            user = db.users.find_one({'email': email}) 
+            
+            if user is None:
+                return make_response(False, "존재하지 않는 아이디입니다.")
+            elif not check_password_hash(user['password'], password):
+                return make_response(False, "비밀번호가 일치하지 않습니다.")
+                
             access_token = create_access_token(identity=str(user['_id']))
-            response = redirect(url_for('blog.index'))
-            response.set_cookie('access_token', access_token, httponly=True, secure=False)
+            response = make_response(True, "로그인에 성공했습니다.", {
+                'username': user['username'],
+                'email': user['email']
+            })
+            response.set_cookie(
+                'access_token',
+                access_token,
+                httponly=True,
+                secure=False,
+                samesite='Strict',
+                max_age=3600
+            )
             return response
-        
-        flash(error)
+            
+        except Exception as e:
+            return make_response(False, f"서버 오류가 발생했습니다: {str(e)}")
         
     return render_template('auth/login.html')
 
