@@ -64,7 +64,11 @@ def create_app(test_config=None):
     from . import mypage
     app.register_blueprint(mypage.bp)    
 
-    # app.after_request(refresh_expiring_jwts)
+    from . import detailpage
+    app.register_blueprint(detailpage.bp)
+
+    app.after_request(refresh_expiring_jwts)
+
 
     return app
         

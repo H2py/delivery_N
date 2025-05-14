@@ -108,17 +108,24 @@ def create():
                 'status': True,
                 'created_at': current_time,
                 'updated_at': current_time,
-                'participants': []
+                'url': data.get('url', '').strip()
             }
-            # URL 선택적 추가
-            url = data.get('url', '').strip()
-            if url:
-                post_data['url'] = url
             
             db = get_db()
             result = db.posts.insert_one(post_data)
             if result.inserted_id:
-
+                # 게시글 작성자를 participants 컬렉션에 추가
+                participant_data = {
+                    'post_id': result.inserted_id,
+                    'user_id': ObjectId(author_id),
+                    'portion': data['my_portion'],
+                    'amount': (data['total_price'] / data['total_portion']) * data['my_portion'],
+                    'status': '확정',
+                    'created_at': current_time,
+                    'updated_at': current_time
+                }
+                
+                db.participants.insert_one(participant_data)
                 return make_json_response(True, '게시글 생성에 성공했습니다.', {'post_id': str(result.inserted_id), 'redirect_url': '/'})
             else:
                 return make_json_response(False, '게시글 생성에 실패했습니다.', {}), 500
@@ -167,6 +174,59 @@ def get_post(id, check_author=True):
                 }
             },
             {
+                "$lookup": {
+                    "from": "participants",
+                    "localField": "_id",
+                    "foreignField": "post_id",
+                    "as": "participants"
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "participants.user_id",
+                    "foreignField": "_id",
+                    "as": "participant_users"
+                }
+            },
+            {
+                "$addFields": {
+                    "participants": {
+                        "$map": {
+                            "input": "$participants",
+                            "as": "participant",
+                            "in": {
+                                "$mergeObjects": [
+                                    "$$participant",
+                                    {
+                                        "username": {
+                                            "$let": {
+                                                "vars": {
+                                                    "user": {
+                                                        "$arrayElemAt": [
+                                                            {
+                                                                "$filter": {
+                                                                    "input": "$participant_users",
+                                                                    "cond": {
+                                                                        "$eq": ["$$this._id", "$$participant.user_id"]
+                                                                    }
+                                                                }
+                                                            },
+                                                            0
+                                                        ]
+                                                    }
+                                                },
+                                                "in": "$$user.username"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
                 "$project": {
                     "id": "$_id",
                     "title": 1,
@@ -179,6 +239,7 @@ def get_post(id, check_author=True):
                     "deadline": 1,
                     "status": 1,
                     "created_at": 1,
+                    "updated_at": 1,
                     "participants": 1,
                     "author_id": 1,
                     "author_name": {"$ifNull": ["$author.username", "알 수 없음"]}
@@ -266,7 +327,8 @@ def update(id):
                 'my_portion': int(data['my_portion']),
                 'total_portion': int(data['total_portion']),
                 'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
-                'updated_at': datetime.now()
+                'updated_at': datetime.now(),
+                'url': data.get('url', '').strip()
             }
 
             result = db.posts.update_one(
