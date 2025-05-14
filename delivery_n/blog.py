@@ -6,6 +6,9 @@ from delivery_n.utils import make_json_response
 from .auth import login_required
 from .db import get_db
 from bson.objectid import ObjectId
+from flask import current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from .utils import make_response
 
 bp = Blueprint('blog', __name__)
 
@@ -59,21 +62,20 @@ def index():
     return render_template('main.html', posts=posts_list)
 
 @bp.route('/create', methods=('GET', 'POST'))
-# @login_required
+@login_required
 def create():
     if request.method == 'POST':
         try:
             data = request.get_json()
-            
+
+            # JWT에서 user_id 가져오기
+            author_id = get_jwt_identity()
+
             # 필수 필드 검증
             required_fields = ['title', 'store_name', 'menus', 'content', 'total_price', 'my_portion', 'total_portion']
             for field in required_fields:
                 if not data.get(field):
-                    return jsonify({
-                        'success': False,
-                        'message': f'{field} is required.',
-                        'result': {}
-                    }), 400
+                    return make_response(False, f'{field} is required.') , 400
 
             # 현재 시간
             current_time = datetime.now()
@@ -97,6 +99,7 @@ def create():
             db = get_db()
             result = db.posts.insert_one(post_data)
             if result.inserted_id:
+
                 return make_json_response(True, '게시글 생성에 성공했습니다.', {'post_id': str(result.inserted_id), 'redirect_url': '/'})
             else:
                 return make_json_response(False, '게시글 생성에 실패했습니다.', {}), 500
@@ -106,7 +109,6 @@ def create():
         
         except Exception as e:
             return make_json_response(False, f'서버 오류: {str(e)}', {}), 500            
-
             
     return render_template('blog/create.html')
 

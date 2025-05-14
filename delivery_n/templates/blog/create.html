@@ -99,6 +99,7 @@
 </div>
 
 <script>
+
 document.addEventListener('DOMContentLoaded', function() {
     const menuInput = document.getElementById('menu-input');
     const menuTags = document.getElementById('menu-tags');
@@ -197,8 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
             my_portion: myPortion,
             total_portion: totalPortion,
             total_price: totalPrice,
-            deadline: formData.get('deadline'),
-            author_id: '507f1f77bcf86cd799439011'
+            deadline: formData.get('deadline')
         }
 
         fetch('/create', {
@@ -206,20 +206,31 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify(data),
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            credentials: 'include'
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('로그인이 필요합니다.');
+                }
+                return response.json().then(err => {
+                    throw new Error(err.message || '요청 처리 중 오류가 발생했습니다.');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                alert(data.message);
-                window.location.href = data.result.redirect_url;
+                alert(data.message || '게시글이 성공적으로 작성되었습니다.');
+                window.location.href = data.result.redirect_url || '/';
             } else {
-                alert(data.message);
+                alert(data.message || '게시글 작성에 실패했습니다.');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('요청 처리 중 오류가 발생했습니다.');
+            alert(error.message || '요청 처리 중 오류가 발생했습니다.');
         });
     });
 });
