@@ -3,7 +3,7 @@ from flask import Blueprint, flash, g, redirect, render_template, request, url_f
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from .db import get_db
-from flask_jwt_extended import create_access_token, get_jwt_identity
+from flask_jwt_extended import create_access_token, get_jwt_identity, verify_jwt_in_request
 from bson.objectid import ObjectId
 from .email import send_mail
 import random
@@ -40,9 +40,11 @@ def register():
         elif db.users.find_one({'email': email}):
             error = 'Email already exists'
             
-        otp_record = db.top_tokens.find_one({'email': email, 'verifed': True})
-        if not otp_record:
-            error = '이메일 인증이 필요합니다'    
+        otp_record = db.otp_tokens.find_one({'email': email})
+        if otp_record is None:
+            error = '인증 요청을 먼저 해주세요.'
+        elif not otp_record.get('verified', False):
+            error = '이메일 인증이 완료되지 않았습니다.'
         
         if error is None:
             try:
@@ -52,7 +54,7 @@ def register():
                     'password': generate_password_hash(password)
                 })
                 db.otp_tokens.delete_one({'email': email})
-                return redirect(url_for('index'))
+                return redirect(url_for('index'))            
             except Exception as e:
                 error = f"Registration failed: {e}"
 
@@ -116,6 +118,7 @@ def verify_otp():
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
+
         username = request.form['username']
         password = request.form['password']
         db = get_db()
@@ -162,19 +165,14 @@ def recover():
 
 @bp.before_app_request
 def load_logged_in_user():
-    token = request.cookies.get('access_token')
-    
-    if not token:
-        g.user = None
-        return
+    g.user = None
     try:
+        verify_jwt_in_request(optional=True)
         user_id = get_jwt_identity()
         if user_id:
             db = get_db()
-            g.user = db.users.find_one({'_id': ObjectId(user_id)}) 
-        else:
-            g.user = None
-    except:
+            g.user = db.users.find_one({'_id': ObjectId(user_id)})
+    except Exception:
         g.user = None
         
 @bp.route('/logout')

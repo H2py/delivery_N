@@ -25,6 +25,12 @@ def create_app(test_config=None):
         MAIL_USE_TLS=os.getenv('MAIL_USE_TLS', 'False').lower() == 'true',
         MAIL_USE_SSL=os.getenv('MAIL_USE_SSL', 'True').lower() == 'true'
     )
+    
+    app.config.update({
+        "JWT_TOKEN_LOCATION": ["cookies"],
+        "JWT_COOKIE_SECURE": False,
+        "JWT_COOKIE_CSRF_PROTECT": False
+    })
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
     else:
