@@ -68,8 +68,9 @@ def index():
                 "created_at": 1,
                 "updated_at": 1
             }
-        }
+        }#
     ])
+
     posts_list = list(posts_cursor)
 
     return render_template('main.html', posts=posts_list, page=page, total_pages=total_pages, start_page=start_page, end_page=end_page)
