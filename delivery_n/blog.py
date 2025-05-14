@@ -76,7 +76,8 @@ def create():
                 'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
                 'status': '모집중',
                 'created_at': current_time,
-                'updated_at': current_time
+                'updated_at': current_time,
+                'participants': []
             }
             
             # 데이터베이스에 저장

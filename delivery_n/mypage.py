@@ -106,3 +106,34 @@ def delete_account():
     response.delete_cookie('access_token')
 
     return response
+
+@bp.route('/joined_posts', methods=['GET'])
+@login_required
+def joined_posts():
+    db = get_db()
+    query = {
+        "$and": [
+            {
+                "$or": [
+                    {"author_id": ObjectId(g.user['_id'])},
+                    {"participants": ObjectId(g.user['_id'])}
+                ]
+            },
+        ]
+    }
+
+    posts_cursor = db.posts.find(query).sort("created_at", -1)
+
+    posts = []
+    for post in posts_cursor:
+        posts.append({
+            "_id": str(post["_id"]),
+            "title": post.get("title"),
+            "store_name": post.get("store_name"),
+            "menus": post.get("menus"),
+            "content": post.get("content"),
+            "author_id": str(post["author_id"]),
+            "created_at": post.get("created_at").isoformat() if post.get("created_at") else None,
+            "deadline": post.get("deadline").isoformat() if post.get("deadline") else None,
+            "status": post.get("status")
+        })
