@@ -2,15 +2,16 @@ from pymongo import MongoClient
 from datetime import datetime
 from flask import current_app, g
 from urllib.parse import quote_plus
+import os
 
 def get_db():
     if 'db' not in g:
         # MongoDB Atlas 연결 설정
-        uri = "mongodb+srv://anfakt0606:tkfkdgo12!@delivery-n.o2oro1i.mongodb.net/delivery-n?retryWrites=true&w=majority"
+        uri = os.getenv("MONGO_URI")
         
         try:
             client = MongoClient(uri)
-            g.db = client['delivery-n']  # 하이픈을 사용한 데이터베이스 이름으로 접근
+            g.db = client.get_database()
         except Exception as e:
             print(f"MongoDB 연결 실패: {e}")
             raise
