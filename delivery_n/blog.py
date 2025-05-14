@@ -242,7 +242,13 @@ def get_post(id, check_author=True):
                     "updated_at": 1,
                     "participants": 1,
                     "author_id": 1,
-                    "author_name": {"$ifNull": ["$author.username", "알 수 없음"]}
+                    "author_name": {"$ifNull": ["$author.username", "알 수 없음"]},
+                    "remaining_portion": {
+                        "$subtract": [
+                            "$total_portion",
+                            {"$sum": "$participants.portion"}
+                        ]
+                    }
                 }
             }
         ]).try_next()
