@@ -6,7 +6,6 @@ from . import mail
 
 
 def send_mail(cert_info, otp):
-    
     msg = Message(
         '[배달N빵] 이메일 인증 번호',
         sender=MAIL_USERNAME,

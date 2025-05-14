@@ -3,12 +3,13 @@ from flask import Blueprint, flash, g, redirect, render_template, request, url_f
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from .db import get_db
-from flask_jwt_extended import create_access_token, get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import create_access_token, get_jwt_identity, set_access_cookies, set_refresh_cookies, unset_jwt_cookies, verify_jwt_in_request, create_refresh_token
 from bson.objectid import ObjectId
 from .email import send_mail
 import random
 from datetime import datetime, timedelta
-from .utils import make_response  
+from .utils import make_json_response
+from flask import make_response  
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -48,28 +49,48 @@ def register():
         
         if error is None:
             try:
-                db.users.insert_one({
+                user_id = db.users.insert_one({
                     'username': username,
                     'email': email,
                     'password': generate_password_hash(password)
-                })
+                }).inserted_id
                 db.otp_tokens.delete_one({'email': email})
-                return redirect(url_for('index'))            
+
+                access_token = create_access_token(identity=str(user_id), expires_delta=timedelta(minutes=30))
+                refresh_token = create_refresh_token(identity=str(user_id), expires_delta=timedelta(days=14))
+
+                response = make_response(redirect(url_for('index')))
+                set_access_cookies(response, access_token, max_age=30*60)  
+                set_refresh_cookies(response, refresh_token, max_age=14*24*60*60) 
+                db.tokens.update_one(
+                    {'user_id': user_id},
+                    {'$set': {
+                        'token': refresh_token,
+                        'created_at': datetime.now(),
+                        'expired_at': datetime.now() + timedelta(days=14),
+                        'is_revoked': False
+                    }},
+                    upsert=True
+                )
+                      
+                return response
+
             except Exception as e:
                 error = f"Registration failed: {e}"
 
     return render_template('auth/register.html')
+
 
 @bp.route('/send-otp', methods=['POST'])
 def send_otp():
     data = request.get_json()
     email = data.get('email')
     if not email:
-        return make_response(False, "이메일이 필요합니다.")
+        return make_json_response(False, "이메일이 필요합니다.")
     
     db = get_db()
     if db.users.find_one({'email': email}):
-        return make_response(False, "이미 가입된 이메일입니다.")
+        return make_json_response(False, "이미 가입된 이메일입니다.")
 
     otp = str(random.randint(100000, 999999))
     expires_at = datetime.now() + timedelta(minutes=5)
@@ -83,9 +104,9 @@ def send_otp():
     })
 
     if send_mail(email, otp):
-        return make_response(True, "인증 코드가 전송되었습니다.")
+        return make_json_response(True, "인증 코드가 전송되었습니다.")
     else:
-        return make_response(False, "이메일 전송에 실패했습니다.")
+        return make_json_response(False, "이메일 전송에 실패했습니다.")
 
 @bp.route('/verify-otp', methods=['POST'])
 def verify_otp():
@@ -94,46 +115,59 @@ def verify_otp():
     otp = data.get('otp')
 
     if not email or not otp:
-        return make_response(False, "이메일, 인증코드가 필요합니다.")
+        return make_json_response(False, "이메일, 인증코드가 필요합니다.")
 
     db = get_db()
     otp_record = db.otp_tokens.find_one({'email': email})
 
     if not otp_record:
-        return make_response(False, "인증코드가 존재하지 않습니다.")
+        return make_json_response(False, "인증코드가 존재하지 않습니다.")
 
     if datetime.now() > otp_record['expires_at']:
         db.otp_tokens.delete_one({'email': email})
-        return make_response(False, "인증코드가 만료되었습니다.")
+        return make_json_response(False, "인증코드가 만료되었습니다.")
 
     if otp != otp_record['otp']:
-        return make_response(False, "인증 코드가 일치하지 않습니다.")
+        return make_json_response(False, "인증 코드가 일치하지 않습니다.")
 
     db.otp_tokens.update_one(
         {'email': email},
         {'$set': {'verified': True}}
     )
-    return make_response(True, "인증이 완료되었습니다.")
+    return make_json_response(True, "인증이 완료되었습니다.")
+
 
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
-
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
         db = get_db()
         error = None
-        user = db.users.find_one({'username': username}) 
+        user = db.users.find_one({'email': email}) 
         
         if user is None:
-            error = 'Incorrect username.' 
+            error = 'Incorrect email' 
         elif not check_password_hash(user['password'], password):
             error = "Incorrect password."
             
         if error is None:
-            access_token = create_access_token(identity=str(user['_id']))
+            access_token = create_access_token(identity=str(user['_id']), expires_delta= timedelta(minutes=30))
+            refresh_token = create_refresh_token(identity=str(user['_id']), expires_delta = timedelta(days=14))
+            
+            db.tokens.update_one(
+                {'user_id' : user['_id']},
+                {'$set':{
+                    'token': refresh_token,
+                    'created_at' : datetime.now(),
+                    'expired_at' : datetime.now() + timedelta(days=14),
+                    'is_revoked' : False
+                }},
+                upsert=True
+            )
             response = redirect(url_for('blog.index'))
-            response.set_cookie('access_token', access_token, httponly=True, secure=False)
+            response.set_cookie('access_token_cookie', access_token, httponly=True, secure=False)
+            response.set_cookie('refresh_token_cookie', refresh_token, httponly=True, secure=False)
             return response
         
         flash(error)
@@ -177,9 +211,21 @@ def load_logged_in_user():
         
 @bp.route('/logout')
 def logout():
-    response = redirect(url_for('auth.login'))
-    response.delete_cookie('access_token')
-    return response
+    db = get_db()
+    user_id = get_jwt_identity()
+    db.tokens.update_one(
+        {'user_id': ObjectId(user_id), 'is_revoked': False},
+        {'$set': {'is_revoked': True, 'revoked_at': datetime.now()}}
+    )
+    
+    response = make_response(make_json_response(
+        True,
+        "로그아웃 성공",
+        {"redirect_url": url_for('auth.login')}
+    ))
+    unset_jwt_cookies(response)
+    
+    return response, 200
 
 @bp.route('/mypage', methods=('GET', 'POST'))
 @login_required
