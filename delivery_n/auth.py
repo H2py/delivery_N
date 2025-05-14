@@ -137,7 +137,7 @@ def verify_otp():
     return make_json_response(True, "인증이 완료되었습니다.")
 
 
-@bp.route('/login', methods=('GET', 'POST'))
+@bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         try:
@@ -187,7 +187,7 @@ def login():
     return render_template('auth/login.html')
 
 
-@bp.route('/recover', methods=('GET', 'POST'))
+@bp.route('/recover', methods=['GET', 'POST'])
 def recover():
     if request.method == 'POST':
         email = request.form['email']
@@ -240,7 +240,7 @@ def logout():
     
     return response, 200
 
-@bp.route('/mypage', methods=('GET', 'POST'))
+@bp.route('/mypage', methods=['GET', 'POST'])
 # @login_required
 def mypage():
     return render_template('mypage/mypage.html')

@@ -61,7 +61,7 @@ def index():
 
     return render_template('main.html', posts=posts_list)
 
-@bp.route('/create', methods=('GET', 'POST'))
+@bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
     if request.method == 'POST':
@@ -120,7 +120,7 @@ def create():
 #     try:
         
 
-@bp.route('/posts/<id>', methods=('GET'))
+@bp.route('/posts/<id>', methods=['GET'])
 @login_required
 def get_post(id):
     db = get_db()
@@ -157,7 +157,7 @@ def get_post(id):
     return post
     
     
-@bp.route('/update/<id>', methods=('GET', 'POST'))
+@bp.route('/update/<id>', methods=['GET', 'POST'])
 @login_required
 def update(id, check_author=True):
 
@@ -203,7 +203,7 @@ def update(id, check_author=True):
 
 
 
-@bp.route('/delete/<id>', methods=('POST'))
+@bp.route('/delete/<id>', methods=['POST'])
 @login_required
 def delete(id):
     try:
@@ -219,7 +219,7 @@ def delete(id):
     except Exception as e:
         return make_json_response(False, str(e), {}), 404
 
-@bp.route('/detail/<id>', methods=('GET', 'POST'))
+@bp.route('/detail/<id>', methods=['GET', 'POST'])
 @login_required
 def detail(id):
     post = get_post(id, check_author=False)    
