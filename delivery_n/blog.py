@@ -68,22 +68,14 @@ def index():
 
 
 @bp.route('/create', methods=('GET', 'POST'))
-@jwt_required()
+@login_required
 def create():
     if request.method == 'POST':
         try:
             data = request.get_json()
-            
+
             # JWT에서 user_id 가져오기
             author_id = get_jwt_identity()
-            print("DEBUG - Author ID from JWT:", author_id)  # 디버깅용 출력
-            
-            if not author_id:
-                return jsonify({
-                    'success': False,
-                    'message': '사용자 인증에 실패했습니다.',
-                    'result': {}
-                }), 401
 
             # 필수 필드 검증
             required_fields = ['title', 'store_name', 'menus', 'content', 'total_price', 'my_portion', 'total_portion']
