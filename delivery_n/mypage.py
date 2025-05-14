@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, g, jsonify
+from flask import Blueprint, json, make_response, render_template, request, redirect, url_for, session, flash, g, jsonify
 import datetime
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required, verify_jwt_in_request
 from werkzeug.exceptions import abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from .auth import login_required
@@ -180,13 +180,33 @@ def my_posts():
 
 
 @bp.route('/delete_account', methods=['POST'])
-@jwt_required()
 def delete_account():
     db = get_db()
-    db.users.update_one(
-        {'_id': ObjectId(g.user['_id'])},
-        {'$set': {'deleted_at': True}} 
-    )
-    return make_json_response( True, "회원 탈퇴가 완료되었습니다.",{
-        "redirect_url": url_for('index')
-    }), 200
+    
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            
+            db.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'deleted_at': True}}
+            )
+            
+            db.tokens.update_one(
+                {'user_id': ObjectId(user_id), 'is_revoked': False},
+                {'$set': {'is_revoked': True, 'revoked_at': datetime.now()}}
+            )
+    except Exception as e:
+        print(f"계정 삭제 중 오류: {str(e)}")
+
+    response = make_response()
+    response.delete_cookie('access_token_cookie', path='/')
+    response.delete_cookie('refresh_token_cookie', path='/')
+    response.set_data(json.dumps({
+        'success': True,
+        'message': "회원 탈퇴가 완료되었습니다.",
+        'data': {'redirect_url': url_for('auth.login')}
+    }))
+    response.headers['Content-Type'] = 'application/json'
+    return response, 200
