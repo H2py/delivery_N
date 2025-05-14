@@ -52,7 +52,7 @@ def register():
                     'password': generate_password_hash(password)
                 })
                 db.otp_tokens.delete_one({'email': email})
-                return redirect(url_for('auth.login'))
+                return redirect(url_for('index'))
             except Exception as e:
                 error = f"Registration failed: {e}"
 
@@ -83,9 +83,9 @@ def send_otp():
     if send_mail(email, otp):
         return make_response(True, "인증 코드가 전송되었습니다.")
     else:
-        return make_response(False, "이메일 전송에 실패했습니다.", status_code=500)
+        return make_response(False, "이메일 전송에 실패했습니다.")
 
-@bp.route('verify-otp', methods=['POST'])
+@bp.route('/verify-otp', methods=['POST'])
 def verify_otp():
     data = request.get_json()
     email = data.get('email')
@@ -95,7 +95,7 @@ def verify_otp():
         return make_response(False, "이메일, 인증코드가 필요합니다.")
 
     db = get_db()
-    otp_record = db.otp_tokens.find_one({'email': email, 'verified': True})
+    otp_record = db.otp_tokens.find_one({'email': email})
 
     if not otp_record:
         return make_response(False, "인증코드가 존재하지 않습니다.")

@@ -14,7 +14,7 @@
         </div>
 
         <!-- 폼 영역 -->
-        <form class="space-y-6">
+        <form method="post" class="space-y-6">
             <div class="space-y-4 font-notokr font-medium">
                 <div>
                     <label for="slack" class="block text-lg sm:text-xl text-gray mb-2">slack 이름</label>
@@ -130,10 +130,10 @@
         const authError = document.getElementById('auth-error');
         const authSuccess = document.getElementById('auth-success');
         const emailAuthInput = document.getElementById('email_auth');
+        const emailInput = document.getElementById('email');
 
         let timerInterval;
         let isVerified = false;
-        let authCode = ''; // 실제로는 서버에서 생성된 인증코드가 저장될 변수
 
         function startTimer(duration) {
             let timer = duration;
@@ -149,8 +149,10 @@
                     clearInterval(timerInterval);
                     authError.classList.remove('hidden');
                     authError.textContent = '인증 시간이 만료되었습니다.';
+                    authSuccess.classList.add('hidden');
                     isVerified = false;
-                    authCode = ''; // 인증코드 초기화
+                    authCodeSection.classList.add('hidden');
+                    sendAuthCodeBtn.disabled = false;
                 }
             }, 1000);
         }
@@ -165,43 +167,71 @@
             }
         }
 
-        sendAuthCodeBtn.addEventListener('click', function() {
-            // 여기에 실제 인증코드 전송 API 호출 로직이 들어갈 예정
-            authCodeSection.classList.remove('hidden');
-            authError.classList.add('hidden');
-            authSuccess.classList.add('hidden');
-            startTimer(5); // 테스트용 5초
-            this.disabled = true;
-            setTimeout(() => {
-                this.disabled = false;
-            }, 60000); // 1분 후 재전송 가능
+        sendAuthCodeBtn.addEventListener('click', async function() {
+            const email = emailInput.value.trim();
+            if (!email) {
+                authError.classList.remove('hidden');
+                authError.textContent = '이메일을 입력해주세요.';
+                return;
+            }
 
-            // 테스트용 임시 인증코드 생성 (실제로는 서버에서 생성)
-            authCode = '123456';
-            emailAuthInput.value = ''; // 입력창 초기화
+            const response = await fetch('{{ url_for("auth.send_otp") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                authCodeSection.classList.remove('hidden');
+                authError.classList.add('hidden');
+                authSuccess.classList.add('hidden');
+                startTimer(300); 
+                this.disabled = true;
+                setTimeout(() => {
+                    this.disabled = false;
+                }, 60000); 
+                emailAuthInput.value = ''; 
+            } else {
+                authError.classList.remove('hidden');
+                authError.textContent = result.error || '인증 코드 전송에 실패했습니다.';
+            }
         });
 
-        verifyAuthCodeBtn.addEventListener('click', function() {
+        verifyAuthCodeBtn.addEventListener('click', async function() {
+            const email = emailInput.value.trim();
             const inputCode = emailAuthInput.value.trim();
             
             if (!inputCode) {
-                authError.textContent = '인증번호를 입력해주세요.';
                 authError.classList.remove('hidden');
+                authError.textContent = '인증 코드를 입력해주세요.';
                 authSuccess.classList.add('hidden');
                 return;
             }
 
-            if (inputCode === authCode) {
+            const response = await fetch('{{ url_for("auth.verify_otp") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, otp: inputCode }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
                 clearInterval(timerInterval);
                 timerElement.textContent = '';
                 authSuccess.classList.remove('hidden');
                 authError.classList.add('hidden');
                 isVerified = true;
-                emailAuthInput.disabled = true; // 인증 성공 시 입력창 비활성화
-                verifyAuthCodeBtn.disabled = true; // 인증 성공 시 버튼 비활성화
+                emailAuthInput.disabled = true;
+                verifyAuthCodeBtn.disabled = true;
+                sendAuthCodeBtn.disabled = true; 
             } else {
-                authError.textContent = '인증번호가 틀렸습니다.';
                 authError.classList.remove('hidden');
+                authError.textContent = result.error || '인증에 실패했습니다.';
                 authSuccess.classList.add('hidden');
                 isVerified = false;
             }
@@ -210,16 +240,16 @@
         passwordCheckInput.addEventListener('input', validatePasswords);
 
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
             if (!isVerified) {
+                e.preventDefault();
                 authError.classList.remove('hidden');
                 authError.textContent = '이메일 인증이 필요합니다.';
                 return;
             }
             if (!validatePasswords()) {
+                e.preventDefault();
                 return;
             }
-            // 여기에 실제 회원가입 API 호출 로직이 들어갈 예정
         });
     });
 </script>
