@@ -28,14 +28,18 @@ def accept_participant(post_id, user_id):
 @login_required
 def reject_participant(post_id, user_id):
     db = get_db()
-    post = db.posts.find_one({"_id": ObjectId(post_id)})
-    if not post or str(post['author_id']) != str(g.user['_id']):
-        return make_json_response(False, "권한이 없습니다.")
     
-    db.posts.update_one(
-        {"_id": ObjectId(post_id), "participants.user_id": ObjectId(user_id)},
-        {"$set": {"participants.$.status": "cancelled"}}
-    )
+    db.participants.update_one(
+    {
+        "post_id": ObjectId(post_id),
+        "user_id": ObjectId(user_id)
+    },
+    {
+        "$set": {
+            "status": "거절"
+        }
+    }
+)
     return make_json_response(True, "거절 완료")
 
 #참여하기
