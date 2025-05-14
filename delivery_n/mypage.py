@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, g, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash,make_response, g, jsonify
 from datetime import datetime
 from werkzeug.exceptions import abort
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -90,11 +90,19 @@ def my_posts():
     return make_response(True, "내 게시글 목록입니다.", posts)
 
 @bp.route('/delete_account', methods=['POST'])
-# @login_required
+@login_required
 def delete_account():
     db = get_db()
+
     db.users.update_one(
         {'_id': ObjectId(g.user['_id'])},
-     {'$set': {'deleted_at': True}} 
+        {'$set': {'deleted_at': True}}
     )
-    return redirect(url_for('index'))
+
+    response = make_response(jsonify({
+        'success': True,
+        'message': '회원탈퇴가 완료되었습니다.'
+    }))
+    response.delete_cookie('access_token')
+
+    return response
