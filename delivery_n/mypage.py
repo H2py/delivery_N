@@ -88,3 +88,13 @@ def my_posts():
         })
 
     return make_response(True, "내 게시글 목록입니다.", posts)
+
+@bp.route('/delete_account', methods=['POST'])
+# @login_required
+def delete_account():
+    db = get_db()
+    db.users.update_one(
+        {'_id': ObjectId(g.user['_id'])},
+     {'$set': {'deleted_at': True}} 
+    )
+    return redirect(url_for('index'))
