@@ -15,6 +15,19 @@ bp = Blueprint('mypage', __name__, url_prefix='/mypage')
 @login_required
 def my_write():
     db = get_db()
+
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    skip = (page - 1) * per_page
+    
+    total_posts = db.posts.count_documents({})
+    total_pages = (total_posts + per_page - 1) // per_page 
+    
+    block_size = 5
+    block_index = (page - 1) // block_size
+    start_page = block_index * block_size + 1
+    end_page = min(start_page + block_size - 1, total_pages)
+
     posts = db.posts.aggregate([
         {
             "$match": {"author_id": ObjectId(g.user['_id'])}
@@ -60,15 +73,27 @@ def my_write():
             "$sort": {"created_at": -1}
         }
     ])
-    return render_template('mypage/myWriteList.html', posts=list(posts))
+    return render_template('mypage/myWriteList.html', posts=list(posts), page=page, total_pages=total_pages, start_page=start_page, end_page=end_page)
 
 
 @bp.route('/my_join', methods=['GET'])
 @login_required
 def my_join():
     db = get_db()
+
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    skip = (page - 1) * per_page
+    
+    total_posts = db.posts.count_documents({})
+    total_pages = (total_posts + per_page - 1) // per_page 
+    
+    block_size = 5
+    block_index = (page - 1) // block_size
+    start_page = block_index * block_size + 1
+    end_page = min(start_page + block_size - 1, total_pages)
     posts = db.posts.find({'participants': ObjectId(g.user['_id'])})
-    return render_template('mypage/myJoinList.html', posts=posts)
+    return render_template('mypage/myJoinList.html', posts=posts, page=page, total_pages=total_pages, start_page=start_page, end_page=end_page)
 
 
 @bp.route('/modify_name', methods=['GET', 'POST'])

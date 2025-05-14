@@ -10,7 +10,8 @@
     <ul class="space-y-4 font-notokr">
       {% if posts %}
         {% for post in posts %}
-          <li class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200"
+          <li onclick="location.href='/posts/{{ post.id }}'"
+              class="bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200 cursor-pointer"
               data-deadline="{{ post.deadline.isoformat() if post.deadline else '' }}"
               data-post-id="{{ post.id }}">
             <div class="flex flex-col space-y-3">
