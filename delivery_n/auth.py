@@ -36,9 +36,9 @@ def register():
             error = 'Password is required'
         elif not email:
             error = 'Email is required'
-        elif db.users.find_one({'username': username, 'deleted_at': {'$ne': True}}):
+        elif db.users.find_one({'username': username, 'is_active': True}):
             error = 'Username already exists'
-        elif db.users.find_one({'email': email, 'deleted_at': {'$ne': True}}):
+        elif db.users.find_one({'email': email, 'is_active': True}):
             error = 'Email already exists'
         
         otp_record = db.otp_tokens.find_one({'email': email})
@@ -49,7 +49,10 @@ def register():
         
         if error is None:
             try:
-                existing_user = db.users.find_one({'email': email, 'deleted_at': True})
+                existing_user = db.users.find_one({
+                    'email': email,
+                    'is_active': False,        
+                })                
                 if existing_user:
                     db.users.update_one(
                         {'_id': existing_user['_id']},
@@ -58,6 +61,7 @@ def register():
                                 'username': username,
                                 'password': generate_password_hash(password),
                                 'deleted_at': None,
+                                'updated_at': datetime.now(),
                                 'is_active': True,
                             },
                             '$unset': {'revoked_at': ''}  
@@ -70,6 +74,8 @@ def register():
                         'email': email,
                         'password': generate_password_hash(password),
                         'deleted_at': None,
+                        'created_at': datetime.now(),
+                        'updated_at': None,
                         "is_active": True,
                     }).inserted_id
                 
@@ -111,7 +117,7 @@ def send_otp():
         return make_json_response(False, "이메일이 필요합니다.")
     
     db = get_db()
-    if db.users.find_one({'email': email, 'deleted_at': {'$ne': True}}):
+    if db.users.find_one({'email': email, 'is_active': True}):
         return make_json_response(False, "이미 가입된 이메일입니다.")
     
     otp = str(random.randint(100000, 999999))
@@ -180,8 +186,8 @@ def login():
                 return make_json_response(False, "등록된 이메일이 없습니다."), 401
             
             # is_active가 False인 경우 체크
-            if user.get('is_active') is False:
-                return make_json_response(False, "탈퇴한 계정입니다."), 401
+            #if user.get('is_active') is False:
+                #return make_json_response(False, "탈퇴한 계정입니다."), 401
             
             elif not check_password_hash(user['password'], password):
                 return make_json_response(False, "비밀번호가 일치하지 않습니다."), 401
