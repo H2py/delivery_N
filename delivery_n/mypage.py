@@ -313,7 +313,7 @@ def delete_account():
             db.users.update_one(
                 {'_id': ObjectId(user_id)},
                 {'$set': {
-                    'deleted_at': datetime.datetime.now(),
+                    'deleted_at': datetime.now(),
                     'is_active': False    
                 }}
             )
@@ -326,7 +326,7 @@ def delete_account():
                 },
                 {'$set': {
                     'is_revoked': True,
-                    'revoked_at': datetime.datetime.now()
+                    'revoked_at': datetime.now()
                 }}
             )
 
