@@ -294,27 +294,56 @@ def delete_account():
     try:
         verify_jwt_in_request(optional=True)
         user_id = get_jwt_identity()
+
         if user_id:
+            data = request.get_json()
+            password = data.get('password')
+
+            # 현재 사용자 정보 가져오기
+            user = db.users.find_one({'_id': ObjectId(user_id)})
             
+            if not user:
+                return make_json_response(False, "사용자를 찾을 수 없습니다.")
+
+            # 비밀번호 검증
+            if not check_password_hash(user['password'], password):
+                return make_json_response(False, "비밀번호가 일치하지 않습니다.")
+
+            # 회원 탈퇴 처리
             db.users.update_one(
                 {'_id': ObjectId(user_id)},
-                {'$set': {'deleted_at': True}}
+                {'$set': {
+                    'deleted_at': datetime.datetime.now(),
+                    'is_active': False    
+                }}
             )
             
+            # 토큰 무효화
             db.tokens.update_one(
-                {'user_id': ObjectId(user_id), 'is_revoked': False},
-                {'$set': {'is_revoked': True, 'revoked_at': datetime.now()}}
+                {
+                    'user_id': ObjectId(user_id),
+                    'is_revoked': False
+                },
+                {'$set': {
+                    'is_revoked': True,
+                    'revoked_at': datetime.datetime.now()
+                }}
             )
+
+            # 회원 탈퇴 완료 후 응답
+            response = make_response()
+            response.delete_cookie('access_token_cookie', path='/')
+            response.delete_cookie('refresh_token_cookie', path='/')
+            response.set_data(json.dumps({
+                'success': True,
+                'message': "회원 탈퇴가 완료되었습니다.",
+                'data': {'redirect_url': url_for('auth.login')}
+            }))
+            response.headers['Content-Type'] = 'application/json'
+            return response, 200
+
     except Exception as e:
         print(f"계정 삭제 중 오류: {str(e)}")
+        return make_json_response(False, f"오류가 발생했습니다: {str(e)}")
 
-    response = make_response()
-    response.delete_cookie('access_token_cookie', path='/')
-    response.delete_cookie('refresh_token_cookie', path='/')
-    response.set_data(json.dumps({
-        'success': True,
-        'message': "회원 탈퇴가 완료되었습니다.",
-        'data': {'redirect_url': url_for('auth.login')}
-    }))
-    response.headers['Content-Type'] = 'application/json'
-    return response, 200
+    return make_json_response(False, "잘못된 접근입니다.")

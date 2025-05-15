@@ -432,16 +432,22 @@
         const response = await fetch("/mypage/delete_account", {
           method: "POST",
           headers: {
+            "Content-Type": "application/json",
             "X-Requested-With": "XMLHttpRequest",
           },
           credentials: "include",
+          body: JSON.stringify({
+            password: document.getElementById("confirm-delete-password").value,
+          }),
         });
+
         const data = await response.json();
         if (data.success) {
+          // 회원 탈퇴 처리 완료 후 리다이렉트
+          alert(data.message);
           window.location.href = data.data.redirect_url || "/";
         } else {
           alert(data.message || "회원 탈퇴 중 오류가 발생했습니다.");
-          window.location.href = "/";
         }
       } catch (error) {
         console.error("Error:", error);
