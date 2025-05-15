@@ -36,9 +36,9 @@ def register():
             error = 'Password is required'
         elif not email:
             error = 'Email is required'
-        elif db.users.find_one({'username': username, 'deleted_at': {'$ne': True}}):
+        elif db.users.find_one({'username': username, 'is_active': True}):
             error = 'Username already exists'
-        elif db.users.find_one({'email': email, 'deleted_at': {'$ne': True}}):
+        elif db.users.find_one({'email': email, 'is_active': True}):
             error = 'Email already exists'
         
         otp_record = db.otp_tokens.find_one({'email': email})
@@ -61,6 +61,7 @@ def register():
                                 'username': username,
                                 'password': generate_password_hash(password),
                                 'deleted_at': None,
+                                'updated_at': datetime.now(),
                                 'is_active': True,
                             },
                             '$unset': {'revoked_at': ''}  
@@ -73,6 +74,8 @@ def register():
                         'email': email,
                         'password': generate_password_hash(password),
                         'deleted_at': None,
+                        'created_at': datetime.now(),
+                        'updated_at': None,
                         "is_active": True,
                     }).inserted_id
                 
