@@ -5,282 +5,329 @@
 <!-- SEO 관련 헤더 태그 모음 끝 -->
 
 <!-- 헤더 포함 -->
-{% block header %}
-{% include 'common/header.html' %}
-{% endblock %}
+{% block header %} {% include 'common/header.html' %} {% endblock %}
 
 <!-- 컨텐츠 포함 -->
 {% block content %}
 <div class="font-notokr max-w-2xl mx-auto p-6">
-    <!-- 게시글 헤더 -->
-    <div class="border-b pb-4 mb-6">
-        <h1 class="text-3xl font-bold mb-2">{{ post.title }}</h1>
-        <div class="flex justify-between text-gray-600">
-            <span>작성자: {{ post.author_name }}</span>
-            <span>작성일: {{ post.created_at.strftime('%Y-%m-%d') }}</span>
+  <!-- 게시글 헤더 -->
+  <div class="border-b pb-4 mb-6">
+    <h1 class="text-3xl font-bold mb-2">{{ post.title }}</h1>
+    <div class="flex justify-between text-gray-600">
+      <span>작성자: {{ post.author_name }}</span>
+      <span>작성일: {{ post.created_at.strftime('%Y-%m-%d') }}</span>
+    </div>
+  </div>
+
+  <!-- 주문 정보 -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <h2 class="text-lg font-semibold mb-2">가게 정보</h2>
+        <p class="text-gray-700">{{ post.store_name }}</p>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold mb-2">마감 일시</h2>
+        <p class="text-gray-700">
+          {{ post.deadline.strftime('%Y-%m-%d %H:%M') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h2 class="text-lg font-semibold mb-2">메뉴 리스트</h2>
+      <ul class="list-disc list-inside text-gray-700">
+        {% for menu in post.menus %}
+        <li>{{ menu }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h2 class="text-lg font-semibold mb-2">내용</h2>
+      <p class="text-gray-700">{{ post.content }}</p>
+    </div>
+  </div>
+
+  <!-- 참여자 목록 -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">참여 현황</h2>
+    <div class="space-y-4">
+      {% for participant in post.participants %} {% if participant.status !=
+      '거절' %}
+      <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+        <div>
+          <span class="font-semibold">{{ participant.username }}</span>
+          <span class="text-gray-600 ml-2"
+            >{{ "{:,}".format(participant.amount|int) }}원 ({{
+            participant.portion }}/{{ post.total_portion|int }})</span
+          >
+          <span
+            class="{% if participant.status == '확정' %}text-green-500{% else %}text-red-600{% endif %} font-semibold ml-2"
+          >
+            {{ participant.status }}
+          </span>
         </div>
-    </div>
-
-    <!-- 주문 정보 -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <h2 class="text-lg font-semibold mb-2">가게 정보</h2>
-                <p class="text-gray-700">{{ post.store_name }}</p>
-            </div>
-            <div>
-                <h2 class="text-lg font-semibold mb-2">마감 일시</h2>
-                <p class="text-gray-700">{{ post.deadline.strftime('%Y-%m-%d %H:%M') }}</p>
-            </div>
+        {% if post.author_id == g.user._id and participant.status == '대기' %}
+        <div class="space-x-2">
+          <button
+            onclick="handleParticipantStatus('{{ participant.user_id }}', 'accept')"
+            class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+          >
+            수락
+          </button>
+          <button
+            onclick="handleParticipantStatus('{{ participant.user_id }}', 'reject')"
+            class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+          >
+            거절
+          </button>
         </div>
+        {% endif %}
+      </div>
+      {% endif %} {% endfor %}
 
-        <div class="mb-4">
-            <h2 class="text-lg font-semibold mb-2">메뉴 리스트</h2>
-            <ul class="list-disc list-inside text-gray-700">
-                {% for menu in post.menus %}
-                <li>{{ menu }}</li>
-                {% endfor %}
-            </ul>
+      <!-- 총 참여 현황 요약 -->
+      <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-gray-600">총 모집 인원</p>
+            <p class="text-xl font-bold">{{ post.total_portion }}명</p>
+          </div>
+          <div>
+            <p class="text-gray-600">현재 참여 인원</p>
+            <p class="text-xl font-bold">
+              {{ post.participants|selectattr('status', 'ne',
+              '거절')|list|length }}명
+            </p>
+          </div>
+          <div>
+            <p class="text-gray-600">총 모집 금액</p>
+            <p class="text-xl font-bold">
+              {{ "{:,}".format(post.total_price) }}원
+            </p>
+          </div>
+          <div>
+            <p class="text-gray-600">현재 모집 금액</p>
+            <p class="text-xl font-bold">
+              {{ "{:,}".format(post.participants|selectattr('status', 'ne',
+              '거절')|sum(attribute='amount')|int) }}원
+            </p>
+          </div>
         </div>
-
-        <div class="mb-4">
-            <h2 class="text-lg font-semibold mb-2">내용</h2>
-            <p class="text-gray-700">{{ post.content }}</p>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- 참여자 목록 -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-bold mb-4">참여 현황</h2>
-        <div class="space-y-4">
-            {% for participant in post.participants %}
-            {% if participant.status != '거절' %}
-            <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                <div>
-                    <span class="font-semibold">{{ participant.username }}</span>
-                    <span class="text-gray-600 ml-2">{{ "{:,}".format(participant.amount|int) }}원 ({{ participant.portion }}/{{ post.total_portion|int }})</span>
-                    <span class="{% if participant.status == '확정' %}text-green-500{% else %}text-red-600{% endif %} font-semibold ml-2">
-                        {{ participant.status }}
-                    </span>
-                </div>
-                {% if post.author_id == g.user._id and participant.status == '대기' %}
-                <div class="space-x-2">
-                    <button onclick="handleParticipantStatus('{{ participant.user_id }}', 'accept')" 
-                            class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">수락</button>
-                    <button onclick="handleParticipantStatus('{{ participant.user_id }}', 'reject')"
-                            class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">거절</button>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-            {% endfor %}
-            
-            <!-- 총 참여 현황 요약 -->
-            <div class="mt-6 p-4 bg-gray-100 rounded-lg">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-gray-600">총 모집 인원</p>
-                        <p class="text-xl font-bold">{{ post.total_portion }}명</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">현재 참여 인원</p>
-                        <p class="text-xl font-bold">{{ post.participants|selectattr('status', 'ne', '거절')|list|length }}명</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">총 모집 금액</p>
-                        <p class="text-xl font-bold">{{ "{:,}".format(post.total_price) }}원</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">현재 모집 금액</p>
-                        <p class="text-xl font-bold">{{ "{:,}".format(post.participants|selectattr('status', 'ne', '거절')|sum(attribute='amount')|int) }}원</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">카카오톡 오픈채팅방 링크</h2>
+    <a
+      href="{{ post.url }}"
+      target="_blank"
+      class="text-blue-500 hover:text-blue-700 underline break-all"
+    >
+      {{ post.url }}
+    </a>
+  </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-bold mb-4">카카오톡 오픈채팅방 링크</h2>
-        <a href="{{ post.url }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline break-all">
-            {{ post.url }}
-        </a>
-    </div>
+  <!-- 참여 신청 폼 (작성자가 아닌 경우에만 표시) -->
+  {% if post.author_id != g.user._id %}
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">참여 신청</h2>
+    <form id="joinForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          참여 수량 (최대 {{ post.remaining_portion }})
+        </label>
+        <input
+          type="number"
+          id="portionInput"
+          min="1"
+          max="{{ post.remaining_portion }}"
+          value="1"
+          class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div class="text-right">
+        <span class="mr-4 text-lg font-semibold"
+          >참여 금액: <span id="expectedAmount">0</span>원</span
+        >
+        <button
+          type="submit"
+          class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600"
+        >
+          참여하기
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
 
-    <!-- 참여 신청 폼 -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-bold mb-4">참여 신청</h2>
-        <form id="joinForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    참여 수량 (최대 {{ post.remaining_portion }})
-                </label>
-                <input type="number" id="portionInput" min="1" max="{{ post.remaining_portion }}" value="1" 
-
-                       class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="text-right">
-                <span class="mr-4 text-lg font-semibold">참여 금액: <span id="expectedAmount">0</span>원</span>
-                <button type="submit" 
-                        class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
-                    참여하기
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- 관리 버튼 -->
-    {% if post.author_id == g.user._id %}
-    <div class="flex justify-end space-x-4">
-        <a href="/update/{{ post.id }}" class="bg-main text-white px-6 py-2 rounded-md hover:bg-gray-600">수정</a>
-        <button onclick="deletePost('{{ post.id }}')" class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600">삭제</button>
-    </div>
-    {% endif %}
+  <!-- 관리 버튼 -->
+  {% if post.author_id == g.user._id %}
+  <div class="flex justify-end space-x-4">
+    <a
+      href="/update/{{ post.id }}"
+      class="bg-main text-white px-6 py-2 rounded-md hover:bg-gray-600"
+      >수정</a
+    >
+    <button
+      onclick="deletePost('{{ post.id }}')"
+      class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600"
+    >
+      삭제
+    </button>
+  </div>
+  {% endif %}
 </div>
 
 <script>
-    // 서버에서 전달받은 데이터를 전역 변수로 설정
-    const POST_DATA = {
-        id: "{{ post.id }}",
-        totalPrice: parseInt("{{ post.total_price }}") || 0,
-        totalPortion: parseInt("{{ post.total_portion }}") || 1,
-        myPortion: parseInt("{{ post.my_portion }}") || 0,
-        remainingPortion: parseInt("{{ post.remaining_portion }}") || 0,
-        authorId: "{{ post.author_id }}"
-    };
-    
-    // DOM이 로드된 후 실행
-    document.addEventListener('DOMContentLoaded', function() {
-        const joinForm = document.getElementById('joinForm');
-        const portionInput = document.getElementById('portionInput');
-        const expectedAmount = document.getElementById('expectedAmount');
-        
-        if (!joinForm || !portionInput || !expectedAmount) {
-            return;
-        }
-        
-        // 예상 금액 계산 함수
-        const calculateExpectedAmount = (portion) => {
-            if (POST_DATA.totalPrice <= 0 || POST_DATA.totalPortion <= 0) {
-                return 0;
-            }
-            const unitPrice = Math.ceil(POST_DATA.totalPrice / POST_DATA.totalPortion);
-            return unitPrice * portion;
-        };
-        
-        // 금액 표시 업데이트 함수
-        const updateExpectedAmount = (portion) => {
-            if (isNaN(portion) || portion < 1) portion = 1;
-            if (portion > POST_DATA.remainingPortion) portion = POST_DATA.remainingPortion;
-            
-            const amount = calculateExpectedAmount(portion);
-            if (expectedAmount) {
-                expectedAmount.textContent = new Intl.NumberFormat().format(amount);
-            }
-        };
-        
-        // 초기 금액 표시
-        setTimeout(() => {
-            updateExpectedAmount(1);
-        }, 100);
-        
-        // 수량 변경 이벤트
-        portionInput.addEventListener('input', function() {
-            const portion = parseInt(this.value) || 1;
-            updateExpectedAmount(portion);
-        });
-        
-        // 폼 제출 이벤트
-        joinForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const portion = parseInt(portionInput.value);
-            if (portion < 1) {
-                alert('참여 수량은 1 이상이어야 합니다.');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/post/join/{{ post.id }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        portion: portion
-                    }),
-                    credentials: 'include' 
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('참여가 완료되었습니다.');
-                    window.location.reload();
-                } else {
-                    console.log(data);
-                    alert(data.message || '참여 신청 중 오류가 발생했습니다.');
-                }
-            } catch (error) {
-                console.error('오류:', error);
-                alert('참여 신청 중 오류가 발생했습니다.');
-            }
-        });
-    });
+  // 서버에서 전달받은 데이터를 전역 변수로 설정
+  const POST_DATA = {
+    id: "{{ post.id }}",
+    totalPrice: parseInt("{{ post.total_price }}") || 0,
+    totalPortion: parseInt("{{ post.total_portion }}") || 1,
+    myPortion: parseInt("{{ post.my_portion }}") || 0,
+    remainingPortion: parseInt("{{ post.remaining_portion }}") || 0,
+    authorId: "{{ post.author_id }}",
+  };
 
-    // 참여자 상태 변경 함수
-    async function handleParticipantStatus(userId, action) {
-        try {
-            const response = await fetch(`/post/${POST_DATA.id}/participant/${userId}/${action}`, {
-                method: 'PATCH',
-                credentials: 'include'
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert(action === 'accept' ? '수락되었습니다.' : '거절되었습니다.');
-                window.location.reload(); // 페이지 새로고침
-            } else {
-                alert(data.message || '처리 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            console.error('상태 변경 중 오류:', error);
-            alert('처리 중 오류가 발생했습니다.');
-        }
-    }
+  // DOM이 로드된 후 실행
+  document.addEventListener("DOMContentLoaded", function () {
+    // 참여 신청 폼이 존재할 때만 실행
+    const joinForm = document.getElementById("joinForm");
+    const portionInput = document.getElementById("portionInput");
+    const expectedAmount = document.getElementById("expectedAmount");
 
-    // 게시글 삭제 함수
-    async function deletePost(postId) {
-        if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
-            return;
+    if (joinForm && portionInput && expectedAmount) {
+      // 예상 금액 계산 함수
+      const calculateExpectedAmount = (portion) => {
+        if (POST_DATA.totalPrice <= 0 || POST_DATA.totalPortion <= 0) {
+          return 0;
+        }
+        const unitPrice = Math.ceil(
+          POST_DATA.totalPrice / POST_DATA.totalPortion
+        );
+        return unitPrice * portion;
+      };
+
+      // 금액 표시 업데이트 함수
+      const updateExpectedAmount = (portion) => {
+        if (isNaN(portion) || portion < 1) portion = 1;
+        if (portion > POST_DATA.remainingPortion)
+          portion = POST_DATA.remainingPortion;
+
+        const amount = calculateExpectedAmount(portion);
+        if (expectedAmount) {
+          expectedAmount.textContent = new Intl.NumberFormat().format(amount);
+        }
+      };
+
+      // 초기 금액 표시
+      setTimeout(() => {
+        updateExpectedAmount(1);
+      }, 100);
+
+      // 수량 변경 이벤트
+      portionInput.addEventListener("input", function () {
+        const portion = parseInt(this.value) || 1;
+        updateExpectedAmount(portion);
+      });
+
+      // 폼 제출 이벤트
+      joinForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const portion = parseInt(portionInput.value);
+        if (portion < 1) {
+          alert("참여 수량은 1 이상이어야 합니다.");
+          return;
         }
 
         try {
-            const response = await fetch(`/delete/${postId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
+          const response = await fetch("/post/join/{{ post.id }}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              portion: portion,
+            }),
+            credentials: "include",
+          });
 
-            const data = await response.json();
+          const data = await response.json();
 
-            if (data.success) {
-                alert('게시글이 성공적으로 삭제되었습니다.');
-                window.location.href = data.data?.redirect_url || '/';
-            } else {
-                alert(data.message || '게시글 삭제 중 오류가 발생했습니다.');
-            }
+          if (data.success) {
+            alert("참여가 완료되었습니다.");
+            window.location.reload();
+          } else {
+            console.log(data);
+            alert(data.message || "참여 신청 중 오류가 발생했습니다.");
+          }
         } catch (error) {
-            console.error('삭제 중 오류:', error);
-            alert('게시글 삭제 중 오류가 발생했습니다.');
+          console.error("오류:", error);
+          alert("참여 신청 중 오류가 발생했습니다.");
         }
+      });
     }
+  });
+
+  // 참여자 상태 변경 함수
+  async function handleParticipantStatus(userId, action) {
+    try {
+      const response = await fetch(
+        `/post/${POST_DATA.id}/participant/${userId}/${action}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(action === "accept" ? "수락되었습니다." : "거절되었습니다.");
+        window.location.reload(); // 페이지 새로고침
+      } else {
+        alert(data.message || "처리 중 오류가 발생했습니다.");
+      }
+    } catch (error) {
+      console.error("상태 변경 중 오류:", error);
+      alert("처리 중 오류가 발생했습니다.");
+    }
+  }
+
+  // 게시글 삭제 함수
+  async function deletePost(postId) {
+    if (!confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/delete/${postId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("게시글이 성공적으로 삭제되었습니다.");
+        window.location.href = data.data?.redirect_url || "/";
+      } else {
+        alert(data.message || "게시글 삭제 중 오류가 발생했습니다.");
+      }
+    } catch (error) {
+      console.error("삭제 중 오류:", error);
+      alert("게시글 삭제 중 오류가 발생했습니다.");
+    }
+  }
 </script>
 {% endblock %}
 
 <!-- 푸터 포함 -->
-{% block footer %}
-{% include 'common/footer.html' %}
-{% endblock %}
+{% block footer %} {% include 'common/footer.html' %} {% endblock %}
