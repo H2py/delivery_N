@@ -11,7 +11,6 @@ from flask import current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from .utils import make_json_response
 
-
 bp = Blueprint('blog', __name__)
 
 # def get_korea_time():
@@ -36,7 +35,7 @@ def index():
     posts_cursor = db.posts.aggregate([
         {
             "$match": {
-                "deadline": { "$gt": datetime.now(timezone.utc) }  # 현재 시간보다 마감시간이 더 큰 것만 필터링
+                "deadline": { "$gt": datetime.now() }  # 현재 시간보다 마감시간이 더 큰 것만 필터링
             }
         },
         { "$sort": { "deadline": 1 } },  # 마감시간 오름차순 정렬
@@ -113,7 +112,7 @@ def create():
                     return make_json_response(False, f'{field} is required.') , 400
 
             # 현재 시간
-            current_time = get_korea_time()
+            current_time = datetime.now()
             
             post_data = {
                 'title': data['title'],
@@ -358,7 +357,7 @@ def update(id):
                 'my_portion': int(data['my_portion']),
                 'total_portion': int(data['total_portion']),
                 'deadline': datetime.strptime(data['deadline'], "%Y-%m-%dT%H:%M"),
-                'updated_at': get_korea_time(),
+                'updated_at': datetime.now(),
                 'url': data.get('url', '').strip()
             }
 
