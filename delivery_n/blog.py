@@ -112,7 +112,7 @@ def create():
                     return make_json_response(False, f'{field} is required.') , 400
 
             # 현재 시간
-            current_time = get_korea_time()
+            current_time = datetime.now()
             
             post_data = {
                 'title': data['title'],
