@@ -12,7 +12,7 @@
         {% for post in posts %}
           <li onclick="handlePostClick(event, '/posts/{{ post.id }}')"
               class="relative bg-white rounded-lg shadow-md p-4 border-2 border-gray-100 hover:border-main transition-colors duration-200 cursor-pointer post-item"
-              data-deadline="{{ post.deadline.isoformat() if post.deadline else '' }}"
+              data-deadline="{{ post.deadline.isoformat() }}"
               data-post-id="{{ post.id }}">
             <!-- 마감 뱃지 -->
             <div class="absolute hidden expired-badge right-0 top-0 bg-gray-500 text-white px-3 py-1 rounded-tr-lg rounded-bl-lg">
@@ -66,6 +66,15 @@
   </div>
 
   <script>
+    function parseISODate(isoString) {
+      try {
+        return new Date(isoString);
+      } catch (e) {
+        console.error('날짜 파싱 에러:', e);
+        return new Date();
+      }
+    }
+
     function formatRemainingTime(milliseconds) {
       if (milliseconds <= 0) return '';
       
@@ -81,7 +90,8 @@
     }
 
     function setPostExpiration(postElement) {
-      const deadline = new Date(postElement.dataset.deadline);
+      const deadlineStr = postElement.dataset.deadline;
+      const deadline = parseISODate(deadlineStr);
       const now = new Date();
       const remainingTime = deadline - now;
       
@@ -117,6 +127,11 @@
           if (newRemainingTime <= 0) {
             clearInterval(updateInterval);
             remainingTimeElement.textContent = '';
+            postElement.classList.add('opacity-50');
+            expiredBadge.classList.remove('hidden');
+            postElement.style.pointerEvents = 'none';
+            deadlineText.classList.add('text-red-500');
+            deadlineText.textContent = '마감시간 종료';
           } else {
             remainingTimeElement.textContent = formatRemainingTime(newRemainingTime);
           }
@@ -126,7 +141,8 @@
 
     function handlePostClick(event, url) {
       const post = event.currentTarget;
-      const deadline = new Date(post.dataset.deadline);
+      const deadlineStr = post.dataset.deadline;
+      const deadline = parseISODate(deadlineStr);
       const now = new Date();
 
       if (deadline < now) {
