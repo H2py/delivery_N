@@ -95,6 +95,7 @@
     function setPostExpiration(postElement) {
       const deadlineStr = postElement.dataset.deadline;
       const deadline = parseISODate(deadlineStr);
+      
       const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
       const remainingTime = deadline - now;
       
