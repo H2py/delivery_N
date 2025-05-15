@@ -83,7 +83,7 @@ def index():
                 "created_at": 1,
                 "updated_at": 1
             }
-        }
+        }#
     ])
 
     posts_list = list(posts_cursor)
@@ -125,6 +125,10 @@ def create():
                 'updated_at': current_time,
                 'url': data['url']
             }
+            # URL 선택적 추가
+            url = data.get('url', '').strip()
+            if url:
+                post_data['url'] = url
             
             db = get_db()
             result = db.posts.insert_one(post_data)
