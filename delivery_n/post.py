@@ -5,9 +5,7 @@ from werkzeug.exceptions import abort
 from .auth import login_required
 from .db import get_db
 from bson.objectid import ObjectId
-
 bp = Blueprint('posts', __name__)
-
 #홈화면 게시글 보이기
 @bp.route('/')
 def index():
@@ -40,7 +38,6 @@ def index():
         {"$sort": {"created_at": -1}}
     ])
     return render_template('mainpage.html', posts=list(posts))
-
 #게시글 포스팅
 @bp.route('/write', methods=['GET', 'POST'])
 @login_required
@@ -55,9 +52,7 @@ def write():
         totalPrice = request.form.get('totalPrice')
         deadline = request.form.get('deadline')
         url = request.form.get('url')
-
         error = None
-
         if not title:
             error = '제목을 입력해주세요.'
         elif not store:
@@ -74,15 +69,12 @@ def write():
             error = '총 금액을 입력해주세요.'
         elif not deadline:
             error = '마감 시간을 입력해주세요.'
-
         if error is None:
             try:
                 db = get_db()
                 post_number = get_next_sequence(db, "post_id")
-
                 portion_int = int(portion)
                 amount = portion_int  # 본인이 portion 1개 가져간다고 가정
-
                 post = {
                     "number": post_number,
                     "title": title,
@@ -105,12 +97,10 @@ def write():
                         }
                     ]
                 }
-
                 db.posts.insert_one(post)
                 return redirect(url_for('posts.index'))
             except ValueError:
                 error = '숫자 항목에 올바른 값을 입력해주세요.'
-
         return render_template(
             'write.html',
             error=error,
@@ -124,11 +114,7 @@ def write():
             deadline=deadline,
             url=url
         )
-
     return render_template('write.html')
-
-
-
 #게시글 조회
 def get_post(post_id, check_author=True):
     db = get_db()
@@ -161,31 +147,25 @@ def get_post(post_id, check_author=True):
         ]).next()
     except (StopIteration, ValueError):
         abort(404, f"Post id {post_id} doesn't exist.")
-
     if check_author and post['author_id'] != ObjectId(g.user['_id']):
         abort(403)
     return post
-    
-    
 @bp.route('/<int:id>/update', methods=['GET', 'POST'])
 # @login_required
 def update(id):
     post = get_post(id)
-    
     if request.method == 'POST':
         title = request.form['title']
         content = request.form['content']
         error = None
-
         if not title:
             error = '제목은 필수입니다.'
-
         if error:
             flash(error)
         else:
             db = get_db()
             db.posts.update_one(
-                {"_id": ObjectId(post_id)},
+                {"_id": ObjectId(id)},
                 {"$set": {
                     "title": title,
                     "content": content,
@@ -193,10 +173,7 @@ def update(id):
                 }}
             )
             return redirect(url_for('posts.index'))
-
     return render_template('update.html', post=post)
-
-
 #게시글 삭제
 @bp.route('/<post_id>/delete', methods=['POST'])
 @login_required
@@ -205,3 +182,8 @@ def delete(post_id):
     db = get_db()
     db.posts.delete_one({"_id": ObjectId(post_id)})
     return redirect(url_for('posts.index'))
+
+
+
+
+
