@@ -127,7 +127,7 @@ def send_otp():
 
     if send_mail(
         email, 
-        '[배달N빵] 이메일 인증 번호', 
+        '[같이먹자] 이메일 인증 번호', 
         f'인증 번호를 입력하여 이메일 인증을 완료해 주세요.\n인증 번호: {otp}'):
         return make_json_response(True, "인증 코드가 전송되었습니다.")
     else:
@@ -242,14 +242,14 @@ def recover():
             
             # 이메일 전송
             email_content = f"""
-                안녕하세요, 배달N빵입니다.
+                안녕하세요, 같이먹자입니다.
                 요청하신 새로운 비밀번호입니다: {new_password}
 
                 보안을 위해 로그인 후 비밀번호를 변경해주세요.
             """
             if not send_mail(
                 email, 
-                '[배달N빵] 임시 비밀번호 안내', 
+                '[같이먹자] 임시 비밀번호 안내', 
                 email_content):
                 return make_json_response(False, "이메일 전송에 실패했습니다. 잠시 후 다시 시도해주세요.")
             

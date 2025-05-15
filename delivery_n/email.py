@@ -18,3 +18,4 @@ def send_mail(cert_info, title, content):
     except Exception as e:
         print(f"Failed to send email: {e}")
         return False
+ 
