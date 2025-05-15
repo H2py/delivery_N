@@ -74,7 +74,7 @@ def join_post(post_id):
 
                 remaining_portion = max_portion - total_used_portion
                 if portion > remaining_portion:
-                    return make_json_response(False, f"남은 참여 수량은 {remaining_portion}명입니다."), 400
+                    return make_json_response(False, f"남은 참여 수량은 {remaining_portion}입니다."), 400
 
                 unit_price = math.ceil(post.get('total_price', 0) / max_portion)
                 amount = unit_price * portion
