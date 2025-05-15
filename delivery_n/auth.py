@@ -57,7 +57,8 @@ def register():
                             '$set': {
                                 'username': username,
                                 'password': generate_password_hash(password),
-                                'deleted_at': False
+                                'deleted_at': None,
+                                'is_active': True,
                             },
                             '$unset': {'revoked_at': ''}  
                         }
@@ -68,7 +69,8 @@ def register():
                         'username': username,
                         'email': email,
                         'password': generate_password_hash(password),
-                        'deleted_at': False
+                        'deleted_at': None,
+                        "is_active": True,
                     }).inserted_id
                 
                 db.otp_tokens.delete_one({'email': email})
