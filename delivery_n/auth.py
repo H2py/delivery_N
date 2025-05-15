@@ -49,7 +49,10 @@ def register():
         
         if error is None:
             try:
-                existing_user = db.users.find_one({'email': email, 'deleted_at': True})
+                existing_user = db.users.find_one({
+                    'email': email,
+                    'is_active': False,        
+                })                
                 if existing_user:
                     db.users.update_one(
                         {'_id': existing_user['_id']},
@@ -111,7 +114,7 @@ def send_otp():
         return make_json_response(False, "이메일이 필요합니다.")
     
     db = get_db()
-    if db.users.find_one({'email': email, 'deleted_at': {'$ne': True}}):
+    if db.users.find_one({'email': email, 'is_active': True}):
         return make_json_response(False, "이미 가입된 이메일입니다.")
     
     otp = str(random.randint(100000, 999999))
