@@ -1,5 +1,5 @@
 from datetime import datetime
-import pytz
+# import pytz
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for, jsonify
 from werkzeug.exceptions import abort
 
@@ -13,8 +13,8 @@ from .utils import make_json_response
 
 bp = Blueprint('blog', __name__)
 
-def get_korea_time():
-    return datetime.now(pytz.timezone('Asia/Seoul'))
+# def get_korea_time():
+#     return datetime.now(pytz.timezone('Asia/Seoul'))
 
 @bp.route('/')
 def index():
@@ -35,7 +35,7 @@ def index():
     posts_cursor = db.posts.aggregate([
         {
             "$match": {
-                "deadline": { "$gt": get_korea_time() }  # 현재 시간보다 마감시간이 더 큰 것만 필터링
+                "deadline": { "$gt": datetime.now() }  # 현재 시간보다 마감시간이 더 큰 것만 필터링
             }
         },
         { "$sort": { "deadline": 1 } },  # 마감시간 오름차순 정렬
