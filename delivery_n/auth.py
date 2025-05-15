@@ -172,10 +172,15 @@ def login():
                 return make_json_response(False, "이메일과 비밀번호를 입력해주세요."), 400
             
             db = get_db()
-            user = db.users.find_one({'email': email, 'deleted_at': {'$ne': True}})
+            user = db.users.find_one({'email': email})
             
             if user is None:
                 return make_json_response(False, "등록된 이메일이 없습니다."), 401
+            
+            # is_active가 False인 경우 체크
+            if user.get('is_active') is False:
+                return make_json_response(False, "탈퇴한 계정입니다."), 401
+            
             elif not check_password_hash(user['password'], password):
                 return make_json_response(False, "비밀번호가 일치하지 않습니다."), 401
             

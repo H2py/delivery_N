@@ -1,5 +1,5 @@
 from flask import Blueprint, json, make_response, render_template, request, redirect, url_for, session, flash, g, jsonify
-import datetime
+from datetime import datetime
 from flask_jwt_extended import get_jwt_identity, jwt_required, verify_jwt_in_request
 from werkzeug.exceptions import abort
 from werkzeug.security import generate_password_hash, check_password_hash
