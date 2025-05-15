@@ -68,7 +68,10 @@
   <script>
     function parseISODate(isoString) {
       try {
-        return new Date(isoString);
+        const date = new Date(isoString);
+        // 한국 시간으로 변환
+        const koreaTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+        return koreaTime;
       } catch (e) {
         console.error('날짜 파싱 에러:', e);
         return new Date();
@@ -92,7 +95,8 @@
     function setPostExpiration(postElement) {
       const deadlineStr = postElement.dataset.deadline;
       const deadline = parseISODate(deadlineStr);
-      const now = new Date();
+
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
       const remainingTime = deadline - now;
       
       const remainingTimeElement = postElement.querySelector('.remaining-time');
@@ -123,7 +127,7 @@
         
         // 남은 시간 표시 업데이트 (1초마다)
         const updateInterval = setInterval(() => {
-          const newRemainingTime = deadline - new Date();
+          const newRemainingTime = deadline - new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
           if (newRemainingTime <= 0) {
             clearInterval(updateInterval);
             remainingTimeElement.textContent = '';
